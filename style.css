@@ -2792,3 +2792,109 @@ dialog li {
     right: 156px;
   }
 }
+
+/* ================== 手机端技能键（手游风格） ==================
+   原本 .skill-panel 在 max-width:760px 下是 display:none，手机上
+   四个技能完全按不到（实测按钮盒子 0x0），只能靠体感手势。
+   改成飞行时浮在画面右下角的圆形技能键：圆形按钮 + 冷却扇形扫除 +
+   中间倒计时。放在文件最末，避免被前面同优先级的规则盖掉。 */
+@media (max-width: 760px) {
+  .skill-panel {
+    display: none;
+  }
+  body.playing .skill-panel {
+    display: grid;
+    position: fixed;
+    right: 10px;
+    /* 底边留在仪表盘上方：仪表盘顶边约 y=718，技能簇高 121，
+       所以 bottom 至少 126，取 136 留约 10px 间隙。 */
+    bottom: 136px;
+    z-index: 44;
+    grid-template-columns: repeat(2, 56px);
+    grid-auto-rows: 56px;
+    gap: 9px;
+    width: auto;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  body.playing .skill-panel .panel-heading,
+  body.playing .skill-panel .skill-foot {
+    display: none;
+  }
+  body.playing .skill {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    min-height: 0;
+    padding: 0;
+    gap: 0;
+    border: 2px solid #ffffffd0;
+    border-radius: 50%;
+    background: #fffdf5e8;
+    box-shadow: 0 5px 14px rgba(24, 40, 60, 0.32);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    text-align: center;
+  }
+  body.playing .skill:hover:not(:disabled) {
+    background: #fffdf5e8;
+    border-radius: 50%;
+  }
+  body.playing .skill .skill-copy {
+    display: none;
+  }
+  body.playing .skill .skill-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 23px;
+  }
+  body.playing .skill .dash {
+    font-size: 27px;
+  }
+  body.playing .skill .shield {
+    font-size: 28px;
+  }
+  /* 冷却倒计时：正中大号数字 */
+  body.playing .skill .skill-key {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #fff;
+    font: 700 16px/1 ui-monospace, monospace;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+    pointer-events: none;
+  }
+  /* 技能就绪时不显示按键字母，只露图标 —— 手游的观感 */
+  body.playing .skill:not(:disabled) .skill-key {
+    display: none;
+  }
+  /* 冷却扇形：--cd 由 hud() 写入，1 = 刚放完，0 = 已就绪 */
+  body.playing .skill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    background: conic-gradient(
+      rgba(18, 28, 46, 0.66) calc(var(--cd, 0) * 360deg),
+      transparent 0
+    );
+  }
+  body.playing .skill:disabled {
+    opacity: 1;
+  }
+  body.playing .skill:disabled .skill-icon {
+    opacity: 0.5;
+  }
+}

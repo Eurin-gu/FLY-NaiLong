@@ -238,9 +238,12 @@
     $("layerText").textContent = layer;
     $("comboText").textContent = s.combo > 1 ? "甜甜圈连吃 ×" + s.combo : "";
     skillButtons.forEach((b, i) => {
-      b.disabled = s.mode !== "running" || s.cooldown[i] > 0;
+      const left = Math.max(0, s.cooldown[i]);
+      b.disabled = s.mode !== "running" || left > 0;
       b.querySelector(".skill-key").textContent =
-        s.cooldown[i] > 0 ? Math.ceil(s.cooldown[i]) + "s" : i + 1;
+        left > 0 ? Math.ceil(left) + "s" : i + 1;
+      // 冷却进度写进 CSS 变量，手机端用它画扇形扫除：1 = 刚放完，0 = 已就绪
+      b.style.setProperty("--cd", String(cooldowns[i] ? left / cooldowns[i] : 0));
     });
     document
       .querySelectorAll("[data-flight]")
@@ -248,9 +251,11 @@
         (b) => (b.disabled = s.mode === "running" || s.mode === "paused"),
       );
     $("flyBtn").classList.toggle("held", s.mode === "running" && s.thrust > 0);
-    $("rollBtn").disabled = s.mode !== "running" || s.rollCooldown > 0;
+    const rollLeft = Math.max(0, s.rollCooldown);
+    $("rollBtn").disabled = s.mode !== "running" || rollLeft > 0;
     $("rollBtn").querySelector(".skill-key").textContent =
-      s.rollCooldown > 0 ? Math.ceil(s.rollCooldown) + "s" : "E";
+      rollLeft > 0 ? Math.ceil(rollLeft) + "s" : "E";
+    $("rollBtn").style.setProperty("--cd", String(rollLeft / 4));
     $("stage").classList.toggle("boosting", s.mode === "running" && s.dash > 0);
     $("stage").classList.toggle(
       "celebrating",
