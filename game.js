@@ -177,9 +177,9 @@
   } catch {}
   let tutorialStep = -1;
   const tutorialSteps = [
-    { text: "按住 空格 / 按住屏幕 —— 扇翅往上飞", done: () => s.altitude > 40 },
-    { text: "左右拖动画面 —— 控制飞行方向", done: () => Math.abs(s.x) > 12 },
-    { text: "穿过金色甜甜圈 —— 加分，撞到东西会掉血", done: () => s.score > 0 },
+    { text: "按住空格或屏幕 —— 扇翅往上飞", done: () => s.altitude > 40 },
+    { text: "左右拖动画面 —— 控制方向", done: () => Math.abs(s.x) > 12 },
+    { text: "穿过金色甜甜圈加分；撞到东西会掉血", done: () => s.score > 0 },
   ];
   function endTutorial() {
     tutorialSeen = true;

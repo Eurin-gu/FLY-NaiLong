@@ -2959,9 +2959,12 @@ dialog li {
 }
 @media (max-width: 760px) {
   .tutorial {
-    /* 让开顶部的血量/分数、体感胶囊和追捕横幅 */
+    /* 让开顶部的血量/分数、体感胶囊和追捕横幅。
+       给足宽度，否则文案会被挤成三行。 */
     top: 134px;
+    width: calc(100% - 20px);
     max-width: calc(100% - 20px);
+    box-sizing: border-box;
     font-size: 11px;
     padding: 8px 10px;
   }
