@@ -27,6 +27,9 @@ jobs:
 
       - uses: actions/configure-pages@v5
         id: pages
+        with:
+          # 仓库还没开 Pages 时，让工作流自己把它打开（需要 pages: write 权限）
+          enablement: true
 
       - name: Install dependencies
         run: npm ci
