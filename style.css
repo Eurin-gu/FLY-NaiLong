@@ -2975,6 +2975,59 @@ dialog li {
   }
 }
 
+/* ---- 开局浮层第二步：选飞行方式 ---- */
+.overlay-modes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  margin: 2px 0 16px;
+}
+.overlay-modes[hidden] {
+  display: none;
+}
+.overlay-modes .mode-switch {
+  display: grid;
+  /* 竖排：手机端 .overlay-content 只有 ~205px 宽，
+     两列会把「∞ 自由撒欢」挤成三行。 */
+  grid-template-columns: 1fr;
+  gap: 8px;
+  width: 100%;
+  max-width: 330px;
+  margin: 0;
+}
+.overlay-modes .mode-switch button {
+  padding: 13px 8px;
+  font-size: 13px;
+  font-weight: 650;
+  border: 2px solid #e3e7d8;
+  border-radius: 12px;
+  background: #fffdf5;
+  color: #6d7a63;
+}
+.overlay-modes .mode-switch button.selected {
+  border-color: #f0875c;
+  background: #fff2e7;
+  color: #b8481f;
+}
+.overlay-mode-note {
+  margin: 0;
+  max-width: 330px;
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
+  color: #8a9379;
+}
+@media (max-width: 760px) {
+  .overlay-modes {
+    margin-bottom: 12px;
+  }
+  .overlay-modes .mode-switch button {
+    padding: 11px 6px;
+    font-size: 12px;
+  }
+}
+
 /* 手机端准备界面：control-panel / skill-panel / route / tips 都被
    display:none（截图实测 doc=844 且不滚动），标题文案又刚被删掉，
    于是游戏画面下方留了 249px 空白。把准备态的游戏画面拉满整屏。

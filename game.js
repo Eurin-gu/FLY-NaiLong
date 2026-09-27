@@ -354,7 +354,22 @@
     hud();
     beep(300);
   }
+  // 开局分两步：先「开始游戏」，再选飞行方式，最后「一键起飞」。
+  // 结算 / 暂停复用同一个浮层，所以 overlay() 会把模式选择收起来。
+  let overlayStep = "intro";
+  function showModeStep() {
+    overlayStep = "modes";
+    $("overlayTag").textContent = "第二步 · 选个飞行方式";
+    $("overlayTitle").innerHTML = "今天怎么飞？";
+    $("overlayDescription").textContent =
+      "自由撒欢无限飞，挑战模式飞满 6 km 通关。";
+    $("overlayModes").hidden = false;
+    $("startBtn").innerHTML = "一键起飞 <span>↗</span>";
+    beep(660);
+  }
   function overlay(tag, title, description, label) {
+    overlayStep = "done";
+    $("overlayModes").hidden = true;
     $("overlayTag").textContent = tag;
     $("overlayTitle").innerHTML = title;
     $("overlayDescription").textContent = description;
@@ -875,13 +890,17 @@
       pause();
       return;
     }
+    // 开局第一步：先弹出飞行方式选择，第二次点击才真正起飞。
+    if (overlayStep === "intro") {
+      showModeStep();
+      return;
+    }
     // 手机端点击开始即申请体感权限，进入游戏后默认保持体感模式。
     if (matchMedia("(max-width: 760px)").matches && !s.camera) {
       enableCamera().catch(() => {});
     }
     start();
   });
-  $("restartBtn").addEventListener("click", start);
   $("rollBtn").addEventListener("click", barrelRoll);
   $("tutorialSkip").addEventListener("click", endTutorial);
   $("pauseBtn").addEventListener("click", pause);
@@ -899,11 +918,12 @@
         el.classList.toggle("selected", el === b);
         el.setAttribute("aria-pressed", String(el === b));
       });
-      $("flightModeHint").textContent =
+      const modeNote =
         s.flight === "free"
-          ? "无限航程 · 3 格生命 · 撞地或撞楼会被抓。"
-          : "挑战 6 km，三颗心。善用护盾和冲刺。";
-      hud();
+          ? "无限航程 · 体面自动恢复 · 撞地或撞楼会被抓。"
+          : "挑战 6 km · 三颗心 · 善用护盾和冲刺。";
+      $("flightModeHint").textContent = modeNote;
+      $("overlayModeNote").textContent = modeNote;
     }),
   );
   const controls = [

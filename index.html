@@ -134,8 +134,20 @@
                   <p id="overlayDescription">
                     扇动翅膀才有升力。<br />今天，让全城仰望你的背影。
                   </p>
+                  <div class="overlay-modes" id="overlayModes" hidden>
+                    <div class="mode-switch">
+                      <button class="selected" data-flight="free" aria-pressed="true">
+                        ∞ 自由撒欢</button
+                      ><button data-flight="challenge" aria-pressed="false">
+                        ⚑ 6 km 挑战
+                      </button>
+                    </div>
+                    <p class="overlay-mode-note" id="overlayModeNote">
+                      无限航程 · 体面自动恢复 · 撞地或撞楼会被抓。
+                    </p>
+                  </div>
                   <button class="start-button" id="startBtn">
-                    给天空一点震撼 <span>↗</span>
+                    开始游戏 <span>↗</span>
                   </button>
                   <div class="start-tip" id="startTip">
                     <kbd>SPACE</kbd> 喷射上升 <kbd>↓</kbd> 俯冲
@@ -208,15 +220,8 @@
           <aside class="sidebar">
             <section class="control-panel">
               <div class="panel-heading">
-                <h2>今日飞行方式</h2>
+                <h2>当前飞行方式</h2>
                 <span class="pill">真 · 3D</span>
-              </div>
-              <div class="mode-switch flight-mode">
-                <button class="selected" data-flight="free" aria-pressed="true">
-                  ∞ 自由撒欢</button
-                ><button data-flight="challenge" aria-pressed="false">
-                  ⚑ 6 km 挑战
-                </button>
               </div>
               <p class="panel-subtitle" id="flightModeHint">
                 无限航程 · 3 格生命 · 撞地或撞楼会被抓。

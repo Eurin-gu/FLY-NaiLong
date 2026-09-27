@@ -183,7 +183,14 @@ async function checkBrowser() {
 
   // Start the game and hold thrust. Assertions read the visible HUD, which is
   // exactly what a player sees in production.
-  await page.getByRole("button", { name: /给天空一点震撼/ }).click();
+  // 开局两步：开始游戏 → 选飞行方式 → 一键起飞
+  const beginGame = async () => {
+    const start = page.locator("#startBtn");
+    await start.click();
+    await page.waitForTimeout(250);
+    await start.click();
+  };
+  await beginGame();
   const readAltitude = () =>
     page.evaluate(() => Number((document.getElementById("altitudeText").textContent || "").replace(/[^0-9.-]/g, "")));
   const readVerticalSpeed = () =>
@@ -271,7 +278,7 @@ async function checkBrowser() {
   };
   const restartRun = async () => {
     if (await page.locator("#gameOverlay").isVisible()) {
-      await page.getByRole("button", { name: /再喷一趟|给天空一点震撼/ }).click();
+      await page.locator("#startBtn").click();
       await page.waitForTimeout(500);
     }
   };
@@ -390,7 +397,7 @@ async function checkBrowser() {
     // then promote the stage to a full 1200x630 frame with test-only CSS.
     await page.goto(`${BASE}/`, { waitUntil: "load" });
     await page.setViewportSize({ width: 1200, height: 630 });
-    await page.getByRole("button", { name: /给天空一点震撼/ }).click();
+    await beginGame();
     await page.keyboard.down("Space");
     await page.waitForTimeout(700);
     await page.addStyleTag({
