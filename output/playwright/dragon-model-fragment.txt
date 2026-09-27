@@ -1,0 +1,38 @@
+  createDragon() {
+    const T=THREE,g=new T.Group();
+    // Broad, continuous silhouette; small inset eyes and a smile rather than a protruding muzzle.
+    const yellow='#ffd32b';
+    this.body=this.ball(g,yellow,0,-.12,0,1.90,2.10,1.48);
+    this.ball(g,'#fff3bd',0,-.44,1.30,1.32,1.49,.19);
+    const head=new T.Group();head.position.set(0,1.83,.18);g.add(head);this.head=head;
+    this.ball(head,yellow,0,.27,0,1.63,1.77,1.35);
+    this.ball(head,yellow,0,-.50,.28,1.57,.95,1.14);
+    this.eyes=[];
+    for(const side of [-1,1]){
+      const x=side*.69;
+      for(const [color,z,sx,sy,sz] of [['#fff7c5',1.255,.305,.33,.07],['#458b42',1.313,.255,.285,.055],['#10251b',1.359,.195,.23,.035]]){
+        const eye=this.ball(head,color,x,.15,z,sx,sy,sz);eye.userData.openScaleY=sy;this.eyes.push(eye);
+      }
+      const glint=this.ball(head,'#ffffff',x-.055,.247,1.391,.048,.057,.018);glint.userData.openScaleY=.057;this.eyes.push(glint);
+      this.ball(head,'#ffe044',side*.90,-.47,1.22,.42,.23,.12);
+      this.ball(g,yellow,side*1.05,-1.88,.32,.66,.41,.86);
+      for(let j=0;j<3;j++)this.ball(g,'#967048',side*1.05+(j-1)*.23,-1.87,1.07,.08,.09,.14);
+      const arm=new T.Group();arm.position.set(side*1.60,.18,.12);g.add(arm);
+      this.ball(arm,yellow,side*.14,-.32,.1,.43,.67,.44);
+      this.ball(arm,yellow,side*.31,-.78,.34,.36,.35,.35);
+      for(let j=0;j<3;j++)this.ball(arm,'#967048',side*.31+(j-1)*.15,-.95,.54,.06,.09,.09);
+      if(side===-1)this.leftArm=arm;else this.rightArm=arm;
+    }
+    const smilePoints=[];for(let i=0;i<=20;i++){const t=i/20,x=(t-.5)*.99;smilePoints.push(new T.Vector3(x,-.52-Math.sin(t*Math.PI)*.14,1.38-Math.abs(x)*.10));}
+    const smile=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(smilePoints),24,.027,6,false),this.mat('#946228'));head.add(smile);
+    this.tail=this.ball(g,'#f4c42b',0,-1.10,-1.65,.58,.50,1.12);this.tail.rotation.x=-.30;
+    for(let i=0;i<3;i++){const spike=new T.Mesh(new T.ConeGeometry(.17,.38,6),this.mat('#cca13d'));spike.position.set(0,.3-i*.5,-1.4-i*.20);spike.rotation.x=-.9;g.add(spike);}
+    // Small strap-on wings preserve the character silhouette while making wingbeats legible.
+    this.wings=[];
+    for(const side of [-1,1]){
+      const wing=new T.Group();wing.position.set(side*1.32,.40,-.80);
+      const shape=new T.Shape();shape.moveTo(0,0);shape.quadraticCurveTo(side*.7,1.1,side*2.05,1.25);shape.quadraticCurveTo(side*1.8,.45,side*1.6,-.05);shape.quadraticCurveTo(side*.8,.25,0,-.6);shape.closePath();
+      const membrane=new T.Mesh(new T.ShapeGeometry(shape),new T.MeshStandardMaterial({color:'#fff0aa',side:T.DoubleSide,roughness:.8}));wing.add(membrane);g.add(wing);this.wings.push(wing);
+    }
+    return g;
+  }

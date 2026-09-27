@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f6f5ef" />
+    <meta
+      name="description"
+      content="大便超人的城市飞行冒险。按住起飞，松开滑翔，用一点点离谱拯救无聊。"
+    />
+    <title>大便超人 · 今日宜随地起飞</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='50'%3E💩%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="大便超人首页"
+          ><span class="brand-mark">💩</span
+          ><span>大便超人<small>POOPERMAN FLIGHT CLUB</small></span></a
+        >
+        <div class="header-middle">
+          <span class="online-dot"></span> 城市空气质量：欲言又止
+        </div>
+        <div class="header-actions">
+          <button
+            class="icon-button"
+            id="soundBtn"
+            aria-label="开启声音"
+            aria-pressed="false"
+          >
+            ♪<span>声音关</span></button
+          ><button class="icon-button" id="helpBtn">
+            <span class="question">?</span><span>新屎入门</span>
+          </button>
+        </div>
+      </header>
+      <main>
+        <section class="intro">
+          <div>
+            <div class="eyebrow">
+              不一定拯救世界，但一定震撼全城 <span>↗</span>
+            </div>
+            <h1>今日宜：<span>随地起飞。</span></h1>
+            <p>别人飞行靠引擎，你靠一口不服气。</p>
+          </div>
+          <div class="personal-best">
+            <span class="best-icon">✦</span>
+            <div>
+              <small>你的传屎纪录</small
+              ><strong id="bestText">0 <em>分</em></strong>
+            </div>
+          </div>
+        </section>
+        <div class="game-layout">
+          <section class="flight-panel" aria-label="飞行游戏">
+            <div class="stage-top">
+              <div class="location">
+                <span class="location-icon">↗</span
+                ><strong id="zoneText">01 / 带薪摸鱼街</strong
+                ><span class="weather">微风 · 建议站上风口</span>
+              </div>
+              <div class="stage-buttons">
+                <button
+                  id="pauseBtn"
+                  class="small-button"
+                  disabled
+                  aria-label="暂停游戏"
+                >
+                  Ⅱ</button
+                ><button
+                  id="restartBtn"
+                  class="small-button"
+                  aria-label="重新开始"
+                >
+                  ↻
+                </button>
+              </div>
+            </div>
+            <div class="stage" id="stage">
+              <canvas
+                id="gameCanvas"
+                aria-label="横版飞行场景：躲避无人机，收集星星"
+              ></canvas>
+              <div class="in-game-hud">
+                <div class="score-chip">
+                  <span>全城震撼值</span><strong id="scoreText">0000</strong>
+                </div>
+                <div class="health-chip">
+                  <span>英雄的体面</span
+                  ><span id="healthText" aria-label="3 点耐久">♥ ♥ ♥</span>
+                </div>
+              </div>
+              <div class="overlay" id="gameOverlay">
+                <div class="overlay-content">
+                  <div class="flight-tag" id="overlayTag">
+                    正经英雄？那多没意思。
+                  </div>
+                  <h2 id="overlayTitle">一坨不凡。<br />一飞冲天！</h2>
+                  <p id="overlayDescription">
+                    披风一穿，谁还不是个有头有脸的东西。
+                  </p>
+                  <button class="start-button" id="startBtn">
+                    憋不住了，起飞 <span>↗</span>
+                  </button>
+                  <div class="start-tip" id="startTip">
+                    <kbd>SPACE</kbd> 按住上升，松开下降
+                  </div>
+                </div>
+                <span class="scene-stamp"
+                  >非物质文化遗臭<br />民间自封 · 谢绝考证</span
+                >
+              </div>
+              <div
+                class="toast"
+                id="toast"
+                role="status"
+                aria-live="polite"
+              ></div>
+              <div class="combo" id="comboText"></div>
+              <div class="radio" id="radio" hidden>
+                <span>追捕频道</span><strong id="radioText"></strong>
+              </div>
+            </div>
+            <div class="route">
+              <div class="route-label">
+                <strong>逃离社死现场</strong
+                ><span><b id="distanceText">0</b> / 1,200 m</span>
+              </div>
+              <div class="route-track">
+                <div id="distanceBar"></div>
+                <i class="route-point p1"></i><i class="route-point p2"></i
+                ><i class="route-point p3"></i>
+              </div>
+              <div class="route-stops">
+                <span>带薪摸鱼街</span><span>破防大桥</span
+                ><span>上岸洗车站 ⚑</span>
+              </div>
+            </div>
+          </section>
+          <aside class="sidebar">
+            <section class="control-panel">
+              <div class="panel-heading">
+                <h2>不明飞行物驾驶舱</h2>
+                <span class="pill" id="modeText">键盘模式</span>
+              </div>
+              <p class="panel-subtitle">没有驾照，全靠肠道。</p>
+              <div class="mode-switch" role="group" aria-label="选择控制方式">
+                <button id="keyboardBtn" class="selected" aria-pressed="true">
+                  ⌨ 键盘 / 触屏</button
+                ><button id="cameraBtn" aria-pressed="false">◎ 肢体施法</button>
+              </div>
+              <div class="camera-view" id="cameraView" hidden>
+                <video id="cameraPreview" autoplay muted playsinline></video>
+                <p id="cameraStatus" role="status">正在连接摄像头…</p>
+              </div>
+              <button class="fly-button" id="flyBtn">
+                <span class="fly-icon">↟</span><strong>按住，给点底气</strong
+                ><span>松手下降，别太飘 <kbd>空格 / ↑</kbd></span>
+              </button>
+              <div class="control-tip">
+                <span>↔</span>
+                <p>
+                  <kbd>A</kbd> <kbd>D</kbd> 或 <kbd>←</kbd>
+                  <kbd>→</kbd> 左右微调<br /><span
+                    >躲无人机，捡星星，保住体面</span
+                  >
+                </p>
+              </div>
+            </section>
+            <section class="skill-panel">
+              <div class="panel-heading">
+                <h2>不太文明的超能力</h2>
+                <span class="subtle">点击 / 数字键</span>
+              </div>
+              <button class="skill" data-skill="0">
+                <span class="skill-icon poop">💩</span
+                ><span class="skill-copy"
+                  ><strong>天降正义</strong
+                  ><small>前方清场 · 答辩从天而降</small></span
+                ><span class="skill-key">1</span></button
+              ><button class="skill" data-skill="1">
+                <span class="skill-icon dash">ϟ</span
+                ><span class="skill-copy"
+                  ><strong>放屁加速</strong
+                  ><small>无敌 2 秒 · 尾气不达标</small></span
+                ><span class="skill-key">2</span></button
+              ><button class="skill" data-skill="2">
+                <span class="skill-icon shield">◇</span
+                ><span class="skill-copy"
+                  ><strong>脸皮护盾</strong
+                  ><small>保护 5 秒 · 我不要面子啦</small></span
+                ><span class="skill-key">3</span>
+              </button>
+              <div class="skill-foot">
+                <span>✦</span> 技能有冷却，肠道也需要休息
+              </div>
+            </section>
+          </aside>
+        </div>
+        <section class="tips-row" aria-label="飞行提示">
+          <div>
+            <span class="tip-number">01</span>
+            <p>
+              <strong>可以没素质，不能没高度</strong
+              ><small>短按调整高度，别亲吻柏油路。</small>
+            </p>
+          </div>
+          <div>
+            <span class="tip-number">02</span>
+            <p>
+              <strong>能力越大，动静越大</strong
+              ><small>用 1 / 2 / 3 让追兵重新思考职业。</small>
+            </p>
+          </div>
+          <div>
+            <span class="tip-number">03</span>
+            <p>
+              <strong>上岸第一步，先冲一下</strong
+              ><small>飞到 1,200 米洗车站，洗白自己。</small>
+            </p>
+          </div>
+        </section>
+      </main>
+      <footer>
+        <span>POOPERMAN © 2026</span
+        ><span>认真生活，偶尔离谱。 <span class="footer-star">✳</span></span
+        ><span>随时按 <kbd>P</kbd> 假装正经</span>
+      </footer>
+    </div>
+    <dialog id="helpDialog">
+      <button class="dialog-close" id="closeHelp" aria-label="关闭指南">
+        ×
+      </button>
+      <div class="eyebrow">FLIGHT MANUAL / 新屎入门</div>
+      <h2>先学会飞，再考虑体面。</h2>
+      <p>
+        飞到 1,200
+        米的洗车站就能“洗白”。碰到无人机或上下边界会损失一颗心，三颗用完就得重新做人。哦，做屎。
+      </p>
+      <ul>
+        <li>
+          <b>飞行：</b>按住空格、W、↑
+          或飞行按钮上升，松开下降。手机也可按住游戏画面。
+        </li>
+        <li><b>微调：</b>A / D 或 ← / → 控制左右位置。</li>
+        <li>
+          <b>收集：</b>每颗星星 +25 分，连续收集还有奖励。你也可以是有星的屎。
+        </li>
+        <li>
+          <b>超能力：</b>1 清除前方无人机；2 无敌加速；3
+          开启护盾。点击按钮也行。
+        </li>
+        <li>
+          <b>暂停：</b>P / Esc 暂停或继续。切走页面自动暂停，老板来了也不慌。
+        </li>
+        <li>
+          <b>肢体施法：</b
+          >开启摄像头后，双手抬过肩膀上升，放下下降。画面只用于本地动作识别，不上传。
+        </li>
+      </ul>
+      <button class="start-button" id="gotItBtn">懂了，我上天了 ↗</button>
+    </dialog>
+    <script src="game.js"></script>
+  </body>
+</html>

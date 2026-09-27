@@ -1,0 +1,6 @@
+# Cloudflare Pages — https://developers.cloudflare.com/pages/
+# Deploy with:  npx wrangler pages deploy dist
+# Git integration also works: build command "npm run build", output "dist".
+name = "nailong-jet-flight"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-01-01"

@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f6f5ef" />
+    <title>奶龙 · 喷射起飞计划</title>
+    <meta
+      name="description"
+      content="奶龙的 3D 喷射飞行冒险：从城市冲进云层，便便、水柱和彩虹三种动力，今天飞高一点。"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='50'%3E🐲%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <a class="brand" href="./"
+          ><span class="brand-mark">🐲</span
+          ><span
+            >奶龙 · 喷射起飞<small>UNIDENTIFIED FARTING OBJECT</small></span
+          ></a
+        >
+        <div class="header-middle">
+          <span class="online-dot"></span> 不是尾气，是向上的决心
+        </div>
+        <div class="header-actions">
+          <button
+            class="icon-button"
+            id="installBtn"
+            aria-label="安装到桌面"
+            hidden
+          >
+            ⤓<span>安装</span></button
+          ><button
+            class="icon-button"
+            id="soundBtn"
+            aria-label="开启声音"
+            aria-pressed="false"
+          >
+            ♪<span>声音关</span></button
+          ><button class="icon-button" id="helpBtn" aria-label="飞行指南">
+            <span class="question">?</span><span>飞行指南</span>
+          </button>
+        </div>
+      </header>
+      <main>
+        <section class="intro">
+          <div>
+            <div class="eyebrow">
+              3D 喷射飞行实验 · 地心引力今天请假 <span>↗</span>
+            </div>
+            <h1>肚子有货，<span>天空不限高。</span></h1>
+            <p>从楼顶冲到云顶。奶龙负责可爱，下面负责输出。</p>
+          </div>
+          <div class="personal-best">
+            <span class="best-icon">↟</span>
+            <div>
+              <small>最高飞行纪录</small
+              ><strong id="bestText">0 <em>m</em></strong>
+            </div>
+          </div>
+        </section>
+        <div class="game-layout">
+          <section class="flight-panel" aria-label="3D 飞行游戏">
+            <div class="stage-top">
+              <div class="location">
+                <span class="location-icon">◈</span
+                ><strong id="zoneText">01 / 楼顶起步区</strong
+                ><span class="weather">3D 空域 · 向上自由</span>
+              </div>
+              <div class="stage-buttons">
+                <button
+                  id="fullscreenBtn"
+                  class="small-button"
+                  aria-label="全屏飞行"
+                >
+                  ⛶</button
+                ><button
+                  id="pauseBtn"
+                  class="small-button"
+                  disabled
+                  aria-label="暂停游戏"
+                >
+                  Ⅱ</button
+                ><button
+                  id="restartBtn"
+                  class="small-button"
+                  aria-label="重新开始"
+                >
+                  ↻
+                </button>
+              </div>
+            </div>
+            <div class="stage" id="stage">
+              <canvas
+                id="gameCanvas"
+                aria-label="3D 奶龙飞行：穿光环加分，撞飞鸟扣分，被交警抓住直接失败"
+              ></canvas>
+              <div class="in-game-hud">
+                <div class="score-chip">
+                  <span>全城震撼值</span><strong id="scoreText">0000</strong>
+                </div>
+                <div class="health-chip">
+                  <span>英雄的体面</span
+                  ><span id="healthText" aria-label="3 点耐久">♥ ♥ ♥</span>
+                </div>
+              </div>
+              <div class="flight-instruments">
+                <div>
+                  <span>海拔</span
+                  ><strong id="altitudeText">18<small>m</small></strong>
+                </div>
+                <div>
+                  <span>爬升 / 下降</span
+                  ><strong id="verticalText">0<small>m/s</small></strong>
+                </div>
+                <div>
+                  <span>前进速度</span
+                  ><strong id="speedText">0<small>km/h</small></strong>
+                </div>
+              </div>
+              <div class="height-ruler">
+                <span id="layerText">楼顶起步区</span><i></i
+                ><b id="heightScale">18 m</b><i></i><small>↑ 没有天花板</small>
+              </div>
+              <div class="reticle" aria-hidden="true"><i></i></div>
+              <div id="targetHint" class="target-hint" hidden></div>
+              <div class="overlay" id="gameOverlay">
+                <div class="overlay-content">
+                  <div class="flight-tag" id="overlayTag">
+                    奶龙已就位 · 动力来源不便透露
+                  </div>
+                  <h2 id="overlayTitle">我不是胖。<br />我是燃料多。</h2>
+                  <p id="overlayDescription">
+                    扇动翅膀才有升力。<br />今天，让全城仰望你的背影。
+                  </p>
+                  <button class="start-button" id="startBtn">
+                    给天空一点震撼 <span>↗</span>
+                  </button>
+                  <div class="start-tip" id="startTip">
+                    <kbd>SPACE</kbd> 喷射上升 <kbd>↓</kbd> 俯冲
+                  </div>
+                </div>
+                <span class="scene-stamp"
+                  >非传统航空动力<br />起飞之前 · 请站上风口</span
+                >
+              </div>
+              <div
+                class="toast"
+                id="toast"
+                role="status"
+                aria-live="polite"
+              ></div>
+              <div class="combo" id="comboText"></div>
+              <div class="chase" id="chase" role="status" aria-live="polite" hidden>
+                <span class="chase-siren">🚨</span>
+                <div class="chase-body">
+                  <strong id="chaseText">交警正在锁定你</strong>
+                  <div class="chase-track"><i id="chaseBar"></i></div>
+                </div>
+              </div>
+              <div class="chase-flash" id="chaseFlash" aria-hidden="true"></div>
+              <div class="hit-flash" id="hitFlash" aria-hidden="true"></div>
+              <div class="radio" id="radio" hidden>
+                <span>追捕频道 · 机长已破防</span
+                ><strong id="radioText"></strong>
+              </div>
+              <div class="render-error" id="renderError" hidden>
+                <h2 id="renderErrorTitle">游戏暂时无法启动</h2>
+                <p id="renderErrorMessage">
+                  请重新加载游戏；若仍有问题，请检查网络连接。
+                </p>
+                <button id="reloadBtn">重新加载</button>
+              </div>
+              <div class="pose-loader" id="poseLoader" hidden role="status" aria-live="polite">
+                <strong>正在加载体感引擎</strong>
+                <div class="pose-loader-track"><i id="poseLoaderBar"></i></div>
+                <span id="poseLoaderText">准备摄像头…</span>
+              </div>
+              <div class="ground-warning" id="groundWarning" hidden role="status" aria-live="assertive">
+                <b id="groundWarningCount">3</b><span>秒后被抓</span>
+              </div>
+            </div>
+            <div class="route">
+              <div class="route-label">
+                <strong id="routeTitle">自由飞行 · 想飞多久飞多久</strong
+                ><span
+                  ><b id="distanceText">0</b>
+                  <span id="distanceTotal">m</span></span
+                >
+              </div>
+              <div class="route-track">
+                <div id="distanceBar"></div>
+                <i class="route-point p1"></i><i class="route-point p2"></i
+                ><i class="route-point p3"></i>
+              </div>
+              <div class="route-stops">
+                <span>楼顶起步</span><span>云层蹦迪</span
+                ><span>高空显眼包 ↗</span>
+              </div>
+            </div>
+          </section>
+          <aside class="sidebar">
+            <section class="control-panel">
+              <div class="panel-heading">
+                <h2>今日飞行方式</h2>
+                <span class="pill">真 · 3D</span>
+              </div>
+              <div class="mode-switch flight-mode">
+                <button class="selected" data-flight="free" aria-pressed="true">
+                  ∞ 自由撒欢</button
+                ><button data-flight="challenge" aria-pressed="false">
+                  ⚑ 6 km 挑战
+                </button>
+              </div>
+              <p class="panel-subtitle" id="flightModeHint">
+                无限航程 · 3 格生命 · 撞地或撞楼会被抓。
+              </p>
+              <div class="panel-heading fuel-heading">
+                <h2>下面喷点什么？</h2>
+                <span class="subtle"><kbd>Q</kbd> 切换</span>
+              </div>
+              <div class="fuel-switch" role="group" aria-label="选择喷射物">
+                <button data-fuel="poop" class="selected" aria-pressed="true">
+                  <span>💩</span>便便</button
+                ><button data-fuel="water" aria-pressed="false">
+                  <span>💦</span>水柱</button
+                ><button data-fuel="rainbow" aria-pressed="false">
+                  <span>🌈</span>彩虹
+                </button>
+              </div>
+              <p class="fuel-note" id="fuelNote">
+                有机推进，环保部门暂未回复。
+              </p>
+              <button class="fly-button" id="flyBtn">
+                <span class="fly-icon">↟</span><strong>按住，连续扇翅</strong
+                ><span>停扇下坠 · ↓ 俯冲 <kbd>空格 / W</kbd></span>
+              </button>
+              <div class="control-tip">
+                <span>↔</span>
+                <p>
+                  <kbd>A</kbd> <kbd>D</kbd> 左右飞 ·
+                  <kbd>S</kbd> 俯冲<br /><span
+                    >拖动画面操纵 · Shift 无敌冲刺</span
+                  >
+                </p>
+              </div>
+            </section>
+            <section class="skill-panel">
+              <div class="panel-heading">
+                <h2>离谱加一点</h2>
+                <span class="subtle">点击 / 数字键</span>
+              </div>
+              <button class="skill" id="rollBtn">
+                <span class="skill-icon roll">↻</span
+                ><span class="skill-copy"
+                  ><strong>奶龙打滚</strong
+                  ><small>翻滚闪避 · 擦身而过才够帅</small></span
+                ><span class="skill-key">E</span>
+              </button>
+              <button class="skill" data-skill="0">
+                <span class="skill-icon poop">◎</span
+                ><span class="skill-copy"
+                  ><strong>全场洗礼</strong
+                  ><small>喷射冲击波 · 追兵当场下班</small></span
+                ><span class="skill-key">1</span></button
+              ><button class="skill" data-skill="1">
+                <span class="skill-icon dash">ϟ</span
+                ><span class="skill-copy"
+                  ><strong>超频喷射</strong
+                  ><small>2.5 秒无敌 · 镜头都追不上</small></span
+                ><span class="skill-key">2</span></button
+              ><button class="skill" data-skill="2">
+                <span class="skill-icon shield">◇</span
+                ><span class="skill-copy"
+                  ><strong>脸皮护盾</strong
+                  ><small>保护 6 秒 · 尴尬的是别人</small></span
+                ><span class="skill-key">3</span>
+              </button>
+            </section>
+            <section class="camera-panel">
+              <div class="panel-heading">
+                <h2>肢体施法</h2>
+                <span class="pill" id="modeText">键盘 / 触屏</span>
+              </div>
+              <div class="mode-switch">
+                <button id="keyboardBtn" class="selected" aria-pressed="true">
+                  ⌨ 手动</button
+                ><button id="cameraBtn" aria-pressed="false">◎ 开启体感</button>
+              </div>
+              <div class="camera-view" id="cameraView" hidden>
+                <video id="cameraPreview" autoplay muted playsinline></video>
+                <canvas
+                  id="poseOverlay"
+                  width="320"
+                  height="240"
+                  aria-hidden="true"
+                ></canvas>
+                <p id="cameraStatus" role="status">等待摄像头…</p>
+              </div>
+              <div class="steer-feedback">
+                <span id="steerReadout">左倾向左 · 右倾向右</span>
+                <div class="steer-track"><i id="steerDot"></i></div>
+                <button id="recenterBtn" type="button">校准当前站姿</button>
+              </div>
+            </section>
+          </aside>
+        </div>
+        <section class="tips-row">
+          <div>
+            <span class="tip-number">01</span>
+            <p>
+              <strong>这次，天花板真没了</strong
+              ><small>停扇就是自由落体，一直掉一直快。</small>
+            </p>
+          </div>
+          <div>
+            <span class="tip-number">02</span>
+            <p>
+              <strong>穿光环加分 · 撞飞鸟扣分</strong
+              ><small>靠左右和高度对准，吃一圈加 100 分。</small>
+            </p>
+          </div>
+          <div>
+            <span class="tip-number">03</span>
+            <p>
+              <strong>人可以怂，尾气不能停</strong
+              ><small>Shift 冲刺穿云，Q 随时换个口味。</small>
+            </p>
+          </div>
+        </section>
+      </main>
+      <footer>
+        <span>NAILONG · JET FLIGHT LAB</span><span>认真生活，偶尔离谱。 ✳</span
+        ><span><kbd>P</kbd> 暂停 · <kbd>F</kbd> 全屏</span>
+      </footer>
+    </div>
+    <dialog id="helpDialog">
+      <button class="dialog-close" id="closeHelp" aria-label="关闭指南">
+        ×
+      </button>
+      <div class="eyebrow">3D FLIGHT MANUAL</div>
+      <h2>这次真的可以上天。</h2>
+      <p>
+        奶龙会自动向前飞。高度是独立的世界坐标，没有屏幕顶边限制；镜头会跟着你爬升。自由模式可一直飞，挑战模式飞满
+        6 km 即通关。
+      </p>
+      <ul>
+        <li>
+          <b>打滚：</b>E 或“奶龙打滚”翻滚闪避 0.85 秒，冷却 4 秒。翻滚躲过撞击
+          +80 分，贴近无人机擦边飞过 +35 分。
+        </li>
+        <li>
+          <b>上升：</b>空格 / W / ↑ / 喷射按钮，按住模拟连续扇翅，松开停止扇翅。
+        </li>
+        <li>
+          <b>惯性 / 下坠：</b>松手后就是真正的自由落体——重力一路加速，没有终端速度，掉得越久越快；
+          游戏使用 6 倍重力（58.86 m/s²），松手后更快下坠；S / ↓ 进一步加速俯冲。撞地后交警会赶来抓捕。
+        </li>
+        <li>
+          <b>生命与抓捕：</b>每局 3 格生命，开局 10 秒保护期内不受伤、不触发追捕。保护结束后，触地先警告，连续停留 3 秒交警才出现；追捕中继续扇翅升到 25 米即可逃脱。离地会重置警告倒计时。撞楼或生命耗尽仍会被抓捕，被抓后游戏结束。
+        </li>
+        <li>
+          <b>转向：</b>A / D 或 ← / →
+          左右移动，画面中拖动也可以控制上下左右。手机可用四个方向按钮。
+        </li>
+        <li>
+          <b>换动力：</b>Q 切换便便、水柱、彩虹；三种喷射物外观和音效不同。
+        </li>
+        <li>
+          <b>计分与技能：</b>穿过光环 +100，连续穿环有额外奖励；撞飞鸟 -50（可为负分），不扣血。保护期、护盾、冲刺和翻滚期间可免除撞鸟扣分。碰到追捕交警直接失败。1 清场，2 / Shift 无敌冲刺，3 开启护盾。
+        </li>
+        <li>
+          <b>体感技能：</b><b>双手交叉</b>开脸皮护盾、<b>单臂高举</b>（奥特曼那种）触发奶龙打滚、<b>双臂向两侧张开</b>放全场洗礼。造型保持 0.3 秒才生效，冷却时间照常计算。<br />
+          <b>体感：</b>双臂连续上下扇动即可爬升，慢扇会下坠；单次扇动只提供短暂升力。身体左倾 /
+          右倾转向；保持不动或停止扇动就会下坠；摄像头画面仅在本地处理。
+        </li>
+        <li><b>暂停：</b>P / Esc；切出页面自动暂停。F / ⛶ 进入全屏。</li>
+      </ul>
+      <button class="start-button" id="gotItBtn">懂了，允许起飞 ↗</button>
+    </dialog>
+    <script src="vendor/three.min.js"></script>
+    <script src="flight-world.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>

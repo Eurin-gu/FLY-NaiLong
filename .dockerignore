@@ -1,0 +1,13 @@
+node_modules
+dist
+.npm-cache
+.pw-browsers
+.tmp-*
+.playwright-cli
+backups
+output
+*.log
+.git
+.sites-publish
+Dockerfile
+.dockerignore

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0c1424" />
+  <meta name="description" content="扇翼逃亡：用身体动作飞过城市，用泡沫和纸飞机甩开交警。" />
+  <title>扇翼逃亡 · 交警追追追</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23f4c95d'/%3E%3Cpath d='M15 38c12-19 24-19 34 0M20 43c8-10 16-10 24 0' fill='none' stroke='%230c1424' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='24' r='5' fill='%230c1424'/%3E%3C/svg%3E" />
+  <style>
+    :root { color-scheme: dark; --ink:#edf3ff; --muted:#91a0b7; --panel:#111c30ee; --line:#263858; --yellow:#f4c95d; --cyan:#5ee7d7; --pink:#ff7aa8; --danger:#ff6b68; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; background:#080d18; color:var(--ink); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif; }
+    body { overflow:hidden; }
+    button,input { font:inherit; }
+    .app { width:100vw; height:100vh; position:relative; overflow:hidden; background:radial-gradient(circle at 50% 0%, #172a46 0, #0b1323 45%, #080d18 100%); }
+    .grain { position:absolute; inset:0; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"); }
+    .topbar { height:76px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; border-bottom:1px solid #22314b; background:#0d1728d9; position:relative; z-index:3; backdrop-filter:blur(14px); }
+    .brand { display:flex; align-items:center; gap:12px; letter-spacing:.02em; }
+    .brand-mark { width:42px; height:42px; display:grid; place-items:center; border-radius:13px; background:var(--yellow); color:#0c1424; font-size:22px; transform:rotate(-8deg); box-shadow:0 9px 24px #f4c95d2b; }
+    .brand-copy strong { display:block; font-size:15px; }
+    .brand-copy span { display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+    .hud { display:flex; align-items:center; gap:18px; }
+    .meter { min-width:130px; }
+    .meter-label { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.1em; }
+    .meter-label b { color:var(--ink); font-size:13px; letter-spacing:0; }
+    .bar { height:7px; margin-top:6px; border-radius:10px; background:#1b2941; overflow:hidden; }
+    .bar i { display:block; height:100%; width:0%; border-radius:inherit; transition:width .15s ease; }
+    #scoreBar { background:linear-gradient(90deg,var(--yellow),#ffec9a); }
+    #heatBar { background:linear-gradient(90deg,var(--cyan),#b9fff3); }
+    .game-shell { height:calc(100vh - 76px); display:grid; grid-template-columns:minmax(0, 1fr) 318px; gap:16px; padding:16px; position:relative; z-index:2; }
+    .stage { min-width:0; min-height:0; position:relative; border:1px solid #263a5b; border-radius:26px; overflow:hidden; background:#101a2d; box-shadow:0 20px 60px #0006; }
+    #gameCanvas { width:100%; height:100%; display:block; position:relative; z-index:0; }
+    #depthCanvas { position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; pointer-events:none; }
+    .stage-vignette { pointer-events:none; position:absolute; z-index:3; inset:0; background:linear-gradient(180deg,#08101b66 0%,transparent 24%,transparent 70%,#070c16aa 100%); }
+    .stage-caption { position:absolute; z-index:4; left:22px; top:20px; display:flex; gap:8px; align-items:center; color:#dbe7fb; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+    .live-dot { width:8px; height:8px; border-radius:50%; background:var(--pink); box-shadow:0 0 0 5px #ff7aa822; animation:pulse 1.4s infinite; }
+    @keyframes pulse { 50% { box-shadow:0 0 0 9px #ff7aa800; opacity:.55; } }
+    .stage-message { position:absolute; z-index:4; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; transition:opacity .25s; }
+    .stage-message h1 { margin:0; font-size:clamp(26px,4vw,52px); line-height:1; letter-spacing:-.05em; }
+    .stage-message p { color:#b7c3d8; margin:12px 0 0; font-size:14px; }
+    .combo { position:absolute; z-index:4; right:22px; top:18px; text-align:right; }
+    .combo small { color:var(--muted); font-size:11px; letter-spacing:.08em; }
+    .combo strong { display:block; font-size:32px; color:var(--yellow); line-height:1; text-shadow:0 3px 20px #f4c95d44; }
+    .side { min-height:0; display:flex; flex-direction:column; gap:12px; }
+    .panel { border:1px solid var(--line); border-radius:20px; background:var(--panel); box-shadow:0 14px 34px #0003; padding:16px; }
+    .panel-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .panel-title strong { font-size:14px; }
+    .panel-title span { color:var(--muted); font-size:11px; }
+    .camera-box { height:148px; border-radius:14px; overflow:hidden; background:#080f1b; border:1px solid #243756; position:relative; }
+    #cameraPreview { width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:.72; display:none; }
+    .camera-placeholder { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:22px; color:#8fa2bd; font-size:12px; line-height:1.5; }
+    .camera-placeholder b { display:block; color:#dbe7fb; font-size:22px; margin-bottom:5px; }
+    .camera-status { display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted); margin-top:10px; }
+    .status-dot { width:8px; height:8px; border-radius:50%; background:#65758c; }
+    .status-dot.on { background:var(--cyan); box-shadow:0 0 0 4px #5ee7d71d; }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .primary,.ghost { border-radius:12px; padding:10px 12px; cursor:pointer; border:1px solid transparent; transition:.18s ease; }
+    .primary { background:var(--yellow); color:#111927; font-weight:800; }
+    .primary:hover { transform:translateY(-1px); filter:brightness(1.06); }
+    .ghost { background:#17253c; border-color:#2d4467; color:#d9e6fb; }
+    .ghost:hover { background:#203350; }
+    .tricks { flex:1; min-height:0; display:flex; flex-direction:column; }
+    .trick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; overflow:auto; padding-right:2px; }
+    .trick { min-height:58px; padding:8px 5px; border-radius:12px; color:#cfdcf0; border:1px solid #283d5c; background:#142239; cursor:pointer; text-align:left; transition:.15s ease; }
+    .trick:hover { border-color:var(--cyan); transform:translateY(-1px); }
+    .trick:active,.trick.active { background:#203c55; border-color:var(--yellow); transform:scale(.97); }
+    .trick kbd { display:block; color:var(--yellow); font-weight:900; font-size:17px; line-height:1; }
+    .trick span { display:block; color:#a9bad2; font-size:10px; margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hint { margin-top:10px; font-size:11px; color:var(--muted); line-height:1.5; }
+    .brief { color:#aebed3; font-size:12px; line-height:1.55; margin:0; }
+    .brief b { color:#edf3ff; }
+    .overlay { position:absolute; inset:0; z-index:10; display:grid; place-items:center; background:#070d18dc; backdrop-filter:blur(10px); padding:24px; }
+    .start-card { width:min(520px,100%); border:1px solid #355076; border-radius:25px; background:#101c31f5; padding:28px; box-shadow:0 25px 100px #0008; }
+    .eyebrow { color:var(--cyan); font-size:11px; letter-spacing:.15em; text-transform:uppercase; }
+    .start-card h2 { margin:10px 0 10px; font-size:clamp(30px,5vw,48px); letter-spacing:-.06em; line-height:.95; }
+    .start-card p { color:#b3c1d6; font-size:14px; line-height:1.6; margin:0 0 18px; }
+    .name-row { display:flex; gap:8px; margin:14px 0 16px; }
+    .name-row input { min-width:0; flex:1; padding:11px 12px; color:var(--ink); background:#0b1424; border:1px solid #2d4567; border-radius:11px; outline:none; }
+    .name-row input:focus { border-color:var(--cyan); box-shadow:0 0 0 3px #5ee7d71e; }
+    .start-actions { display:flex; gap:8px; }
+    .start-actions button { flex:1; }
+    .controls-note { display:flex; gap:10px; margin-top:18px; padding-top:16px; border-top:1px solid #243653; color:#8fa2bd; font-size:11px; line-height:1.45; }
+    .controls-note strong { color:#dfeafb; display:block; }
+    .toast { position:absolute; left:50%; bottom:24px; transform:translateX(-50%) translateY(16px); opacity:0; pointer-events:none; padding:10px 14px; border-radius:999px; background:#152945ee; border:1px solid #3c5b82; font-size:12px; transition:.22s ease; z-index:8; white-space:nowrap; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    @media (max-width:900px) { body { overflow:auto; } .app { height:auto; min-height:100vh; overflow:visible; } .topbar { height:68px; padding:0 14px; } .hud { gap:10px; } .meter { min-width:86px; } .game-shell { height:auto; min-height:calc(100vh - 68px); grid-template-columns:1fr; padding:10px; } .stage { height:58vh; min-height:420px; } .side { display:grid; grid-template-columns:1fr 1fr; align-items:start; } .tricks { grid-column:1 / -1; } }
+    @media (max-width:600px) { .brand-copy span,.hud .meter:first-child { display:none; } .brand-mark { width:36px; height:36px; } .topbar { height:60px; } .game-shell { min-height:calc(100vh - 60px); } .stage { height:55vh; min-height:360px; border-radius:18px; } .side { display:flex; } .camera-box { height:120px; } .start-card { padding:22px; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="grain"></div>
+    <header class="topbar">
+      <div class="brand"><div class="brand-mark">🪽</div><div class="brand-copy"><strong>扇翼逃亡</strong><span>交警追追追 · 城市空中恶作剧</span></div></div>
+      <div class="hud">
+        <div class="meter"><div class="meter-label"><span>观众热度</span><b id="scoreText">0</b></div><div class="bar"><i id="scoreBar"></i></div></div>
+        <div class="meter"><div class="meter-label"><span>警觉度</span><b id="heatText">0%</b></div><div class="bar"><i id="heatBar"></i></div></div>
+      </div>
+    </header>
+    <section class="game-shell">
+      <div class="stage">
+        <canvas id="gameCanvas"></canvas><canvas id="depthCanvas" aria-label="三维追逐场景"></canvas>
+        <div class="stage-vignette"></div>
+        <div class="stage-caption"><span class="live-dot"></span><span id="stageCaption">空中违章直播中</span></div>
+        <div class="combo"><small>连招</small><strong id="comboText">x0</strong></div>
+        <div class="stage-message" id="stageMessage"><h1>扇起来</h1><p>每一次扇翼，都是一次漂亮的逃脱</p></div>
+        <div class="toast" id="toast"></div>
+      </div>
+      <aside class="side">
+        <section class="panel">
+          <div class="panel-title"><strong>动作捕捉</strong><span id="modeText">键盘备用</span></div>
+          <div class="camera-box"><video id="cameraPreview" autoplay muted playsinline></video><div class="camera-placeholder" id="cameraPlaceholder"><div><b>🪽</b>允许摄像头后，用双臂像鸟一样扇动<br>也可以直接使用键盘开始</div></div></div>
+          <div class="camera-status"><i class="status-dot" id="statusDot"></i><span id="cameraStatus">摄像头未连接</span></div>
+          <div class="actions" style="margin-top:10px"><button class="primary" id="cameraBtn">启用扇翼</button><button class="ghost" id="resetBtn">重新开始</button></div>
+        </section>
+        <section class="panel">
+          <div class="panel-title"><strong>本局任务</strong><span id="distanceText">0 / 1200m</span></div>
+          <p class="brief"><b id="runnerName">飞行员</b>，交警把你认成了空中违章者。保持扇翼节奏，穿过三段城区，在终点洗车站甩掉追捕。</p>
+        </section>
+        <section class="panel tricks">
+          <div class="panel-title"><strong>恶作剧道具</strong><span>数字键 1–12</span></div>
+          <div class="trick-grid" id="trickGrid"></div>
+          <div class="hint">提示：连续使用不同招式会增加观众热度；撞到楼顶或路牌会让警觉度上升。</div>
+        </section>
+      </aside>
+    </section>
+    <div class="overlay" id="startOverlay">
+      <div class="start-card">
+        <div class="eyebrow">城市追逐挑战 · 第 01 关</div>
+        <h2>扇翼逃亡</h2>
+        <p>交警无人机已经锁定你。用双臂扇出升力，用泡沫、彩带和罚单纸飞机制造混乱，飞到终点洗车站。</p>
+        <div class="name-row"><input id="nameInput" maxlength="16" placeholder="给飞行员取个名字" value="飞行员" /></div>
+        <div class="start-actions"><button class="primary" id="startBtn">开始追逐</button><button class="ghost" id="howBtn">怎么玩</button></div>
+        <div class="controls-note"><div>🪽<strong>扇翼</strong>摄像头模式：双臂上下扇动</div><div>⌨<strong>键盘</strong>↑↓升降 · ←→移动 · 1–12放招</div></div>
+      </div>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script>
+  (() => {
+    const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+    const video = document.getElementById('cameraPreview');
+    const state = { running:false, started:false, camera:false, score:0, heat:0, combo:0, distance:0, speed:190, y:0, vx:0, vy:0, lastTime:0, lastFlapAt:0, lastTrick:-1, trickChain:0, seed:4, audio:null, flapKick:0, cameraBob:0, gestureCount:0 };
+    const tricks = [
+      ['泡沫喷射','泡沫'],['巨型泡泡','泡泡'],['彩带旋风','彩带'],['罚单纸飞机','罚单'],['路牌气球','气球'],['泡沫墙','泡沫墙'],
+      ['彩色烟雾','烟雾'],['反向导航','导航'],['路锥弹射','路锥'],['洗车水柱','水柱'],['假出口幻影','幻影'],['超级滑翔','滑翔']
+    ];
+    const grid = document.getElementById('trickGrid');
+    tricks.forEach((t,i)=>{ const b=document.createElement('button'); b.className='trick'; b.dataset.i=i; b.innerHTML=`<kbd>${i+1}</kbd><span>${t[0]}</span>`; b.addEventListener('click',()=>useTrick(i)); grid.appendChild(b); });
+    const $ = id => document.getElementById(id);
+    let W=900,H=620, dpr=Math.min(devicePixelRatio||1,2), obstacles=[], particles=[], buildings=[], police=[], lastFlap=0, audioCtx;
+    let threeRenderer, threeScene, threeCamera, threePlayer, threeWings=[], threeRoadMarks=[], threeBuildings=[], threePolice=[];
+    function init3D(){ if(!window.THREE)return; const dc=document.getElementById('depthCanvas'); threeRenderer=new THREE.WebGLRenderer({canvas:dc,alpha:false,antialias:true}); threeRenderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5)); threeRenderer.setClearColor(0x13263d,1); threeScene=new THREE.Scene(); threeScene.fog=new THREE.Fog(0x13263d,18,78); threeCamera=new THREE.PerspectiveCamera(58,1,.1,120); threeCamera.position.set(0,4.7,11); threeCamera.lookAt(0,1,-22); threeScene.add(new THREE.HemisphereLight(0xb9e6ff,0x102039,1.5)); const sun=new THREE.DirectionalLight(0xffe4a3,2.2);sun.position.set(-8,14,8);threeScene.add(sun); const road=new THREE.Mesh(new THREE.PlaneGeometry(18,100),new THREE.MeshStandardMaterial({color:0x0b1422,roughness:.9}));road.rotation.x=-Math.PI/2;road.position.set(0,-2,-28);threeScene.add(road); const edgeMat=new THREE.MeshBasicMaterial({color:0x5ee7d7});[-5.5,5.5].forEach(x=>{const e=new THREE.Mesh(new THREE.BoxGeometry(.06,.04,100),edgeMat);e.position.set(x,-1.96,-28);threeScene.add(e);}); for(let i=0;i<12;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.18,.04,3.4),new THREE.MeshBasicMaterial({color:0xf4c95d}));m.position.set(0,-1.93,-i*7-2);threeScene.add(m);threeRoadMarks.push(m);} threePlayer=new THREE.Group(); const body=new THREE.Mesh(new THREE.CapsuleGeometry(.48,1.05,5,10),new THREE.MeshStandardMaterial({color:0xff7aa8,roughness:.65}));body.position.y=.15;threePlayer.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.38,16,12),new THREE.MeshStandardMaterial({color:0xf4c95d,roughness:.5}));head.position.y=1.05;threePlayer.add(head); for(const side of [-1,1]){const wing=new THREE.Mesh(new THREE.BoxGeometry(.12,.12,2.2),new THREE.MeshStandardMaterial({color:0xf4c95d,roughness:.5}));wing.position.set(side*1.02,.58,0);wing.rotation.z=side*.34;threePlayer.add(wing);threeWings.push(wing);}threePlayer.position.set(-2.3,1.4,3);threeScene.add(threePlayer); for(let i=0;i<5;i++){const car=new THREE.Group();const base=new THREE.Mesh(new THREE.BoxGeometry(1.7,.45,2.8),new THREE.MeshStandardMaterial({color:0x20344d}));base.position.y=-1.25;car.add(base);const roof=new THREE.Mesh(new THREE.BoxGeometry(1.05,.3,1.1),new THREE.MeshStandardMaterial({color:0xd9e5f2}));roof.position.y=-.82;car.add(roof);const light=new THREE.Mesh(new THREE.BoxGeometry(.7,.08,.08),new THREE.MeshBasicMaterial({color:0xff6b68}));light.position.y=-.57;car.add(light);car.position.set(-1.8+i*.9,-0.1,7+i*2.3);threeScene.add(car);threePolice.push(car);} rebuild3DBuildings(); }
+    function rebuild3DBuildings(){ if(!threeScene)return; threeBuildings.forEach(m=>threeScene.remove(m));threeBuildings=[]; buildings.forEach((b,i)=>{const depth=(i*7)%58+8;const mat=new THREE.MeshStandardMaterial({color:i%2?0x17304a:0x1d3b55,roughness:.88});const mesh=new THREE.Mesh(new THREE.BoxGeometry(Math.max(2,b.w/24),Math.max(3,b.h/24),5+((i*13)%8)),mat);mesh.position.set((i%2?-1:1)*(5.5+(i%3)*1.1),Math.max(0,b.h/48)-2, -depth);threeScene.add(mesh);threeBuildings.push(mesh);}); }
+    function resize3D(){if(!threeRenderer)return;const dc=document.getElementById('depthCanvas');threeRenderer.setSize(W,H,false);threeCamera.aspect=W/H;threeCamera.updateProjectionMatrix();}
+    function update3D(dt){if(!threeRenderer)return; const targetY=((H*.52-state.y)/H)*7;threePlayer.position.y=1.1+targetY;threePlayer.position.x=-2.3+state.vx/130;threePlayer.rotation.z=-state.vx/480;const wingSwing=Math.sin(performance.now()/80)*.28+state.flapKick*.72;threeWings.forEach((w,i)=>w.rotation.z=(i?1:-1)*(.34+wingSwing));threeCamera.position.x+=(state.vx/180-threeCamera.position.x)*dt*2;threeCamera.position.y=4.7+Math.sin(performance.now()/230)*state.cameraBob*.12;threeCamera.lookAt(0,1.4,-22);threeRoadMarks.forEach((m,i)=>{m.position.z=((i*7+state.distance*.16)%72)-68;});threePolice.forEach((c,i)=>{c.position.z=7+i*2.3+Math.sin(performance.now()/700+i)*.2;c.position.x=-1.8+i*.9+(state.y-H*.52)/200;});threeRenderer.render(threeScene,threeCamera);}
+    function resize(){ const r=canvas.getBoundingClientRect(); W=Math.max(360,r.width); H=Math.max(320,r.height); canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); buildCity(); if(threeScene)rebuild3DBuildings(); resize3D(); }
+    window.addEventListener('resize',resize); init3D(); resize();
+    function rand(){ state.seed=(state.seed*1664525+1013904223)>>>0; return state.seed/4294967296; }
+    function buildCity(){ buildings=[]; for(let x=-20;x<W+80;x+=55+rand()*55){ const h=75+rand()*170; buildings.push({x,w:34+rand()*46,h,windows:2+Math.floor(rand()*3)}); } }
+    function resetWorld(){ state.distance=0; state.score=0; state.heat=0; state.combo=0; state.lastFlapAt=0; state.lastTrick=-1; state.trickChain=0; state.y=H*.52; state.vy=0; state.vx=0; state.speed=190; state.seed=Date.now()&0xffffffff; state.flapKick=0; state.cameraBob=0; state.gestureCount=0; obstacles=[]; particles=[]; police=[]; buildCity(); for(let i=0;i<5;i++) police.push({x:100+i*75,y:H*.67+i%2*15,v:0}); updateHUD(); }
+    function start(){ $('startOverlay').style.display='none'; state.running=true; state.started=true; resetWorld(); $('stageMessage').style.opacity=0; if(!state.audio){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); state.audio=audioCtx; } toast('追逐开始：扇翼保持节奏！'); }
+    $('startBtn').addEventListener('click',start); $('resetBtn').addEventListener('click',()=>{resetWorld(); state.running=true; $('startOverlay').style.display='none'; $('stageMessage').style.opacity=0;});
+    $('howBtn').addEventListener('click',()=>toast('摄像头模式双臂扇动升空；也可用 ↑↓ 和 ←→，数字键释放道具。'));
+    function toast(msg){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),1900); }
+    function updateHUD(){ $('scoreText').textContent=Math.floor(state.score); $('scoreBar').style.width=Math.min(100,state.score%1000/10)+'%'; $('heatText').textContent=Math.round(state.heat)+'%'; $('heatBar').style.width=Math.min(100,state.heat)+'%'; $('comboText').textContent='x'+state.combo; $('distanceText').textContent=Math.floor(state.distance)+' / 1200m'; }
+    function flap(power=1){ if(!state.running)return; const kick=Math.max(.8,Math.min(1.65,power)); state.vy-=470*kick; state.lastFlapAt=performance.now(); state.flapKick=1; state.cameraBob=Math.min(1,state.cameraBob+.7); state.score+=4*kick; state.combo=Math.min(99,state.combo+1); state.heat=Math.max(0,state.heat-1.5); burst(W*.27,state.y+16, '#5ee7d7', 10); beep(240+kick*80,.06); }
+    function useTrick(i){ if(!state.running) return; const b=grid.querySelector(`[data-i="${i}"]`); b.classList.remove('active'); void b.offsetWidth; b.classList.add('active'); const names=['泡沫喷射','巨型泡泡','彩带旋风','罚单纸飞机','路牌气球','泡沫墙','彩色烟雾','反向导航','路锥弹射','洗车水柱','假出口幻影','超级滑翔']; state.lastTrick=i; state.trickChain = state.lastTrick===i ? state.trickChain : state.trickChain+1; state.combo+=2; state.score+=20+state.trickChain*3; state.heat=Math.max(0,state.heat-6); burst(W*.36,state.y,['#f4c95d','#ff7aa8','#5ee7d7','#b3a4ff'][i%4],18); toast(names[i]+'！观众热度上升'); beep(320+i*35,.07); }
+    window.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!state.started)start(); if(e.key==='ArrowUp'||e.key==='w'){e.preventDefault();flap(.8);} if(e.key==='ArrowDown'||e.key==='s'){state.vy+=180;} if(e.key==='ArrowLeft'||e.key==='a'){state.vx-=55;} if(e.key==='ArrowRight'||e.key==='d'){state.vx+=55;} const n=Number(e.key); if(n>=1&&n<=9)useTrick(n-1); if(e.key==='0')useTrick(9); if(e.key==='-')useTrick(10); if(e.key==='=')useTrick(11); });
+    function burst(x,y,color,count){ for(let i=0;i<count;i++) particles.push({x,y,vx:(rand()-.5)*180,vy:(rand()-.7)*180,life:.5+rand()*.5,color,size:3+rand()*5}); }
+    function beep(freq,dur){ if(!audioCtx)return; try{const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.frequency.value=freq;o.type='sine';g.gain.value=.018;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur);}catch{} }
+    function spawnObstacle(){ const gap=80+rand()*H*.45; const y=105+rand()*(H-210); obstacles.push({x:W+55,y,w:26+rand()*24,h:32+rand()*32,type:rand()>.5?'sign':'cone',passed:false}); if(rand()>.35) obstacles.push({x:W+140,y:y+gap,w:22,h:36,type:'sign',passed:false}); }
+    function update(dt){ if(!state.running)return; if(rand()<dt*.85)spawnObstacle(); state.distance+=state.speed*dt/10; state.speed=Math.min(310,190+state.distance*.05); const stalled=performance.now()-state.lastFlapAt>360; state.vy+=(stalled?980:620)*dt; state.y+=state.vy*dt; state.vx*=.92; state.flapKick=Math.max(0,state.flapKick-dt*4.8); state.cameraBob=Math.max(0,state.cameraBob-dt*2.8); const center=W*.27; state.y=Math.max(74,Math.min(H-108,state.y)); if(state.y<=75||state.y>=H-109){ state.heat=Math.min(100,state.heat+dt*16); state.score=Math.max(0,state.score-dt*12); }
+      for(const o of obstacles){o.x-=state.speed*dt/3; if(!o.passed&&o.x<center){o.passed=true; state.score+=12; state.combo++;} if(Math.abs(o.x-center)<30&&Math.abs(o.y-state.y)<55){state.heat=Math.min(100,state.heat+dt*35); state.combo=0; burst(center,state.y,'#ff6b68',8);}}
+      obstacles=obstacles.filter(o=>o.x>-100); for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=90*dt;p.life-=dt;} particles=particles.filter(p=>p.life>0); for(const c of police){c.x-=state.speed*dt/3*.86;c.x=Math.max(35,Math.min(W*.16,c.x));c.y+=(state.y+25-c.y)*dt*.8;} if(state.heat>=100){state.running=false; toast('被拦下啦！再扇一局，把连招打出来。'); setTimeout(()=>showEnd(false),600);} if(state.distance>=1200){state.running=false; state.score+=350; showEnd(true);} updateHUD(); }
+    function showEnd(win){ $('stageMessage').innerHTML=win?'<h1>逃到洗车站！</h1><p>观众为你的终极滑翔打出满屏掌声</p>':'<h1>追捕成功</h1><p>把手臂抬高一点，连续扇翼就能飞得更稳</p>'; $('stageMessage').style.opacity=1; toast(win?'本关完成！':'追捕结束'); }
+    function draw(){ ctx.clearRect(0,0,W,H); const sky=ctx.createLinearGradient(0,0,0,H); sky.addColorStop(0,'#12233a');sky.addColorStop(.55,'#1c2e44');sky.addColorStop(1,'#0b1423');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H); drawSun(); drawClouds(); drawCity(); drawRoad(); drawSpeedLines(); drawObstacles(); drawPolice(); drawPlayer(); drawParticles(); }
+    function drawSun(){ctx.fillStyle='#f4c95d22';ctx.beginPath();ctx.arc(W*.74,H*.18,70,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f4c95d';ctx.globalAlpha=.8;ctx.beginPath();ctx.arc(W*.74,H*.18,24,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
+    function drawClouds(){ const drift=(state.distance*.3)%(W+180); for(let i=0;i<4;i++){const x=(i*260-drift+W+180)%(W+180)-90,y=90+(i%2)*52;ctx.fillStyle='#b7d4e51c';ctx.beginPath();ctx.ellipse(x,y,64,13,0,0,Math.PI*2);ctx.ellipse(x+35,y+3,40,10,0,0,Math.PI*2);ctx.fill();} }
+    function drawCity(){ const horizon=H*.35; for(const b of buildings){ const depth=((b.x+state.distance*1.9)% (W+180)+W+180)%(W+180)-90; const scale=.35+((depth+90)/(W+90))*.8; const bw=b.w*scale, bh=b.h*scale, x=W*.5+(depth-W*.5)*.92, y=horizon+(H-106-horizon)*(1-scale*.48)-bh; ctx.fillStyle=scale>.8?'#182c45':'#122238'; ctx.fillRect(x,y,bw,bh); ctx.fillStyle=scale>.8?'#31516b':'#27415a'; for(let r=0;r<b.windows;r++) for(let c=0;c<2;c++){ ctx.globalAlpha=.45+scale*.4; ctx.fillRect(x+9*scale+c*15*scale,y+18*scale+r*28*scale,6*scale,10*scale); } ctx.globalAlpha=1; } }
+    function drawRoad(){ const horizon=H*.35, roadTop=H*.54; ctx.fillStyle='#0a1321'; ctx.beginPath();ctx.moveTo(W*.5,horizon);ctx.lineTo(W, H);ctx.lineTo(0,H);ctx.closePath();ctx.fill(); ctx.strokeStyle='#5ee7d755';ctx.lineWidth=2; for(let i=-5;i<=5;i++){ const bx=W*.5+i*82; ctx.beginPath();ctx.moveTo(W*.5+i*10,horizon);ctx.lineTo(bx,H);ctx.stroke(); } ctx.strokeStyle='#f4c95d99';ctx.lineWidth=4;ctx.setLineDash([38,32]);ctx.lineDashOffset=-(state.distance*3%70);ctx.beginPath();ctx.moveTo(W*.5,horizon);ctx.lineTo(W*.5,H);ctx.stroke();ctx.setLineDash([]); ctx.fillStyle='#5ee7d766';ctx.fillRect(0,roadTop,W,2); for(let z=0;z<5;z++){const p=((state.distance*.02+z/5)%1), y=horizon+(H-horizon)*p*p;ctx.fillStyle='#f4c95d66';ctx.fillRect(W*.5-22*p,y,44*p,3+9*p);} }
+    function drawSpeedLines(){ if(!state.running)return; ctx.strokeStyle='#d7f3ff25';ctx.lineWidth=2; for(let i=0;i<12;i++){const x=(i*97+state.distance*5)%(W+120)-60;const y=50+(i*67)%Math.max(100,H*.72);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-34-state.speed*.05,y+10);ctx.stroke();} }
+    function drawObstacles(){ for(const o of obstacles){const x=o.x,y=o.y,depth=Math.max(.65,Math.min(1.35,1+(x-W*.5)/W*.32));ctx.save();ctx.translate(x,y);ctx.scale(depth,depth); if(o.type==='cone'){ctx.fillStyle='#ff7a63';ctx.beginPath();ctx.moveTo(0,38);ctx.lineTo(14,-2);ctx.lineTo(28,38);ctx.closePath();ctx.fill();ctx.fillStyle='#ffd178';ctx.fillRect(8,18,13,6);}else{ctx.fillStyle='#315070';ctx.fillRect(0,0,o.w,o.h);ctx.fillStyle='#f4c95d';ctx.fillRect(5,8,o.w-10,4);ctx.fillStyle='#ff7aa8';ctx.fillRect(5,20,o.w-10,4);}ctx.restore();} }
+    function drawPolice(){ for(const c of police){ctx.save();ctx.translate(c.x,c.y);ctx.fillStyle='#1f314b';ctx.fillRect(-25,-13,52,24);ctx.fillStyle='#d9e5f2';ctx.fillRect(-17,-9,32,10);ctx.fillStyle='#ff6b68';ctx.fillRect(-18,-17,12,5);ctx.fillStyle='#5ee7d7';ctx.fillRect(6,-17,12,5);ctx.fillStyle='#0b1422';ctx.beginPath();ctx.arc(-15,13,7,0,Math.PI*2);ctx.arc(15,13,7,0,Math.PI*2);ctx.fill();ctx.restore();} }
+    function drawPlayer(){ const x=W*.27,y=state.y+Math.sin(performance.now()/130)*state.cameraBob*4, lean=Math.max(-.2,Math.min(.2,state.vx/250));ctx.save();ctx.translate(x,y);ctx.rotate(lean);ctx.shadowColor='#5ee7d766';ctx.shadowBlur=22;ctx.fillStyle='#f4c95d';ctx.beginPath();ctx.arc(0,-28,15+state.flapKick*2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#0c1424';ctx.beginPath();ctx.arc(-5,-31,2.4,0,Math.PI*2);ctx.arc(5,-31,2.4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#0c1424';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,-27,8,.2,2.9);ctx.stroke();ctx.fillStyle='#ff7aa8';ctx.fillRect(-14,-13,28,34);ctx.strokeStyle='#f4c95d';ctx.lineWidth=7;const wing=Math.sin(performance.now()/90)*12 + state.flapKick*28;ctx.beginPath();ctx.moveTo(-8,-4);ctx.quadraticCurveTo(-33,-18-wing,-47,4-wing);ctx.moveTo(8,-4);ctx.quadraticCurveTo(33,-18+wing,47,4+wing);ctx.stroke();ctx.fillStyle='#f4c95d';ctx.fillRect(-10,20,7,19);ctx.fillRect(3,20,7,19); if(state.flapKick>.1){ctx.strokeStyle='#5ee7d7aa';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,36+state.flapKick*24,0,Math.PI*2);ctx.stroke();}ctx.restore(); }
+    function drawParticles(){ for(const p of particles){ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1; }
+    function loop(t){const dt=Math.min(.05,(t-state.lastTime)/1000||0);state.lastTime=t;update(dt);draw();update3D(dt);requestAnimationFrame(loop);} requestAnimationFrame(loop);
+    async function enableCamera(){ if(!navigator.mediaDevices?.getUserMedia){toast('此浏览器不支持摄像头，已保留键盘模式');return;} try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});video.srcObject=stream;video.style.display='block';$('cameraPlaceholder').style.display='none';$('statusDot').classList.add('on');$('cameraStatus').textContent='摄像头已连接 · 等待扇翼';$('modeText').textContent='摄像头模式';$('cameraBtn').textContent='关闭摄像头';state.camera=true; setupPose();}catch{toast('摄像头未授权，已切换键盘模式');$('cameraStatus').textContent='键盘模式可用';} }
+    function disableCamera(){const s=video.srcObject;if(s)s.getTracks().forEach(t=>t.stop());video.srcObject=null;video.style.display='none';$('cameraPlaceholder').style.display='grid';$('statusDot').classList.remove('on');$('cameraStatus').textContent='摄像头未连接';$('modeText').textContent='键盘备用';state.camera=false;}
+    $('cameraBtn').addEventListener('click',()=>{if(state.camera){disableCamera();$('cameraBtn').textContent='启用扇翼';}else{enableCamera();}});
+    let poseBusy=false, previousLeftY=null, previousRightY=null, lastGestureAt=0;
+    function setupPose(){ if(!window.Pose){$('cameraStatus').textContent='键盘模式可用（姿态组件加载中）';return;} previousLeftY=null; previousRightY=null; lastGestureAt=0; const pose=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}`});pose.setOptions({modelComplexity:1, smoothLandmarks:true, enableSegmentation:false, minDetectionConfidence:.6,minTrackingConfidence:.6});pose.onResults(res=>{const lm=res.poseLandmarks;if(!lm||!state.running)return; const ls=lm[11],rs=lm[12],lw=lm[15],rw=lm[16]; const shoulderX=(ls.x+rs.x)/2; state.vx+=(.5-shoulderX)*180*.06; const now=performance.now(); const leftRise=previousLeftY===null?0:previousLeftY-lw.y; const rightRise=previousRightY===null?0:previousRightY-rw.y; const impulse=Math.max(leftRise,rightRise); if(impulse>.018&&now-lastGestureAt>360){ const power=Math.min(1.65,.82+impulse*24); flap(power); lastGestureAt=now; state.gestureCount++; } previousLeftY=lw.y; previousRightY=rw.y; $('cameraStatus').textContent='扇翼识别中 · '+(performance.now()-state.lastFlapAt>360?'停止扇翼会下坠':'升力中')+' · '+state.gestureCount+' 次';}); const send=async()=>{if(!state.camera||poseBusy)return;poseBusy=true;try{await pose.send({image:video});}finally{poseBusy=false;}requestAnimationFrame(send);};send(); }
+    $('nameInput').addEventListener('input',e=>$('runnerName').textContent=e.target.value.trim()||'飞行员');
+    resetWorld();
+  })();
+  </script>
+</body>
+</html>

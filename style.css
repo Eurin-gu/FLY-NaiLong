@@ -1,0 +1,2794 @@
+@charset "UTF-8";
+:root {
+  --paper: #f6f5ef;
+  --ink: #26332d;
+  --muted: #92978b;
+  --orange: #ee764b;
+  --line: #e4e6dc;
+  --green: #667663;
+  --cream: #fffdf6;
+  font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #e98c55;
+  outline-offset: 4px;
+}
+button {
+  transition:
+    background 0.18s,
+    transform 0.18s,
+    box-shadow 0.18s;
+}
+button:not(:disabled):active {
+  transform: translateY(2px);
+}
+button:disabled {
+  opacity: 0.42;
+}
+kbd {
+  font:
+    10px ui-monospace,
+    monospace;
+  border: 1px solid #dddfd4;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 3px 5px;
+  color: #777f71;
+  background: #fffef8;
+}
+.app {
+  max-width: 1600px;
+  margin: auto;
+  padding: 0 4.7%;
+}
+.topbar {
+  height: 94px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.brand {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #dfded2;
+  border-radius: 14px;
+  background: #f0eee1;
+  font-size: 29px;
+  transform: rotate(-7deg);
+}
+.brand small {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 1.9px;
+  margin-top: 5px;
+  font-weight: 600;
+  color: #8c9282;
+}
+.header-middle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: #7d8674;
+  letter-spacing: 1px;
+}
+.online-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #98aa81;
+  box-shadow: 0 0 0 4px #98aa811a;
+}
+.header-actions {
+  display: flex;
+  gap: 17px;
+}
+.icon-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: none;
+  color: #727a6c;
+  font-size: 18px;
+  padding: 8px 0;
+}
+.icon-button[hidden] {
+  display: none;
+}
+.icon-button span {
+  font-size: 11px;
+}
+.icon-button .question {
+  border: 1px solid #929b87;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  font-size: 11px;
+}
+.intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 35px 0 28px;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #8b9580;
+  font-weight: 600;
+}
+.eyebrow span {
+  color: var(--orange);
+  margin-left: 8px;
+  font-size: 15px;
+}
+h1 {
+  font-size: 32px;
+  letter-spacing: -1px;
+  line-height: 1.4;
+  margin: 9px 0 8px;
+  font-weight: 900;
+}
+h1 span {
+  color: var(--orange);
+}
+.intro p {
+  font-size: 12px;
+  color: #89907f;
+  margin: 0;
+}
+.personal-best {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #eeeee4;
+  padding: 13px 22px;
+  border-radius: 12px;
+}
+.best-icon {
+  font-size: 28px;
+  color: #a6ac85;
+}
+.personal-best small {
+  font-size: 10px;
+  color: #8c937e;
+  display: block;
+}
+.personal-best strong {
+  display: block;
+  font-size: 25px;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+.personal-best em {
+  font-size: 10px;
+  font-weight: 400;
+  font-style: normal;
+  color: #929881;
+}
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 22px;
+}
+.flight-panel {
+  border: 1px solid #dde2d3;
+  border-radius: 16px;
+  background: #fcfcf6;
+  overflow: hidden;
+  min-width: 0;
+  box-shadow: 0 5px 15px #28372203;
+}
+.stage-top {
+  height: 51px;
+  padding: 0 19px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #dfe4d6;
+}
+.location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+}
+.location-icon {
+  font-size: 18px;
+  color: #869777;
+}
+.location strong {
+  font-weight: 650;
+}
+.weather {
+  font-size: 10px;
+  color: #9aa18e;
+  padding-left: 10px;
+  border-left: 1px solid #dedfd4;
+}
+.stage-buttons {
+  display: flex;
+  gap: 8px;
+}
+.small-button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e0e3d7;
+  border-radius: 7px;
+  background: transparent;
+  color: #798371;
+  font-size: 17px;
+}
+.small-button:hover {
+  background: #eeefe4;
+}
+.stage {
+  height: 440px;
+  position: relative;
+  overflow: hidden;
+  background: #e8eddc;
+  touch-action: none;
+}
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.in-game-hud {
+  position: absolute;
+  inset: 20px 22px auto;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.score-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.score-chip > span,
+.health-chip > span:first-child {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #687d5f;
+}
+.score-chip strong {
+  font-size: 25px;
+  color: #556950;
+  letter-spacing: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.health-chip {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  gap: 4px;
+}
+.health-chip > span:last-child {
+  color: #c97550;
+  font-size: 19px;
+  letter-spacing: 4px;
+}
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 48px 6.4%;
+  background: linear-gradient(90deg, #edf0dfd9, transparent 80%);
+}
+.overlay[hidden] {
+  display: none;
+}
+.overlay-content {
+  position: relative;
+  z-index: 2;
+}
+.flight-tag {
+  color: #738468;
+  font-size: 10px;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flight-tag:before {
+  content: "";
+  width: 17px;
+  height: 1px;
+  background: #9dac87;
+}
+.overlay h2 {
+  font-size: 46px;
+  line-height: 1.27;
+  letter-spacing: -2px;
+  margin: 14px 0;
+  color: #354b35;
+  font-weight: 900;
+}
+.overlay p {
+  font-size: 11px;
+  color: #718064;
+  margin: 0 0 24px;
+  max-width: 260px;
+  line-height: 1.8;
+}
+.start-button {
+  background: var(--orange);
+  color: #fffdf5;
+  border: 0;
+  border-radius: 9px;
+  box-shadow:
+    0 4px 0 #d85e39,
+    0 8px 15px #d9804320;
+  padding: 13px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 174px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
+.start-button:hover {
+  background: #e8673c;
+  box-shadow:
+    0 4px 0 #c95d38,
+    0 9px 18px #d9804330;
+}
+.start-button span {
+  font-size: 20px;
+}
+.start-tip {
+  font-size: 9px;
+  color: #78866a;
+  margin-top: 19px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.start-tip kbd {
+  background: #f4f6e5b3;
+  border-color: #cfd9c2;
+  font-size: 8px;
+}
+.scene-stamp {
+  position: absolute;
+  right: 23px;
+  bottom: 29px;
+  transform: rotate(-9deg);
+  color: #788961;
+  font-size: 10px;
+  letter-spacing: 2px;
+  line-height: 1.8;
+  border-top: 1px solid #adb993;
+  border-bottom: 1px solid #adb993;
+  padding: 6px 10px;
+}
+.route {
+  padding: 17px 21px 15px;
+}
+.route-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+}
+.route-label strong {
+  font-weight: 600;
+  color: #7a8570;
+}
+.route-label span {
+  color: #858d77;
+  font-size: 9px;
+}
+.route-label b {
+  color: #67755c;
+  font-weight: 600;
+}
+.route-track {
+  position: relative;
+  margin: 15px 2px 10px;
+  height: 4px;
+  background: #e7eadb;
+  border-radius: 4px;
+}
+.route-track > div {
+  height: 100%;
+  background: #a4b18d;
+  border-radius: 4px;
+  width: 0;
+  transition: width 0.2s;
+}
+.route-point {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: absolute;
+  background: #d9dfca;
+  top: -2px;
+  border: 2px solid #fbfcf5;
+}
+.p1 {
+  left: 0;
+  background: #90a377;
+}
+.p2 {
+  left: 50%;
+}
+.p3 {
+  right: 0;
+}
+.route-stops {
+  display: flex;
+  justify-content: space-between;
+  color: #8c9579;
+  font-size: 9px;
+}
+.route-stops span:first-child {
+  color: #7f8e6a;
+}
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.control-panel,
+.skill-panel {
+  background: #fcfcf7;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 21px;
+}
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.panel-heading h2 {
+  font-size: 13px;
+  font-weight: 750;
+  margin: 0;
+}
+.pill {
+  font-size: 8px;
+  color: #728357;
+  background: #edf0e2;
+  padding: 4px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.panel-subtitle {
+  font-size: 10px;
+  color: #848b76;
+  margin: 8px 0 19px;
+}
+.mode-switch {
+  display: flex;
+  background: #eeefe7;
+  padding: 4px;
+  border-radius: 7px;
+  gap: 2px;
+}
+.mode-switch button {
+  width: 50%;
+  padding: 8px 2px;
+  font-size: 10px;
+  border: 0;
+  border-radius: 5px;
+  color: #7e856f;
+  background: none;
+}
+.mode-switch .selected {
+  background: #fffef8;
+  color: #586750;
+  box-shadow: 0 1px 5px #454f3210;
+}
+.fly-button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fcf0df;
+  border: 1px solid #f0d8b6;
+  border-bottom: 3px solid #edcfaa;
+  color: #a36c44;
+  border-radius: 10px;
+  margin-top: 15px;
+  padding: 12px 8px 14px;
+  touch-action: none;
+  user-select: none;
+}
+.fly-button .fly-icon {
+  font-size: 28px;
+  line-height: 1.3;
+  font-weight: 400;
+  color: #d99765;
+}
+.fly-button strong {
+  font-size: 13px;
+  letter-spacing: 1px;
+  margin: 2px 0 8px;
+}
+.fly-button > span:last-child {
+  font-size: 9px;
+  color: #9c805b;
+}
+.fly-button kbd {
+  background: #fff8eb;
+  border-color: #e9d6ba;
+  font-size: 8px;
+  color: #967950;
+  margin-left: 4px;
+}
+.fly-button.held {
+  background: #f9ddac;
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+}
+.control-tip {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+  color: #869077;
+}
+.control-tip > span {
+  font-size: 18px;
+}
+.control-tip p {
+  font-size: 9px;
+  line-height: 2;
+  margin: 0;
+}
+.control-tip p > span {
+  font-size: 9px;
+  color: #879075;
+}
+.control-tip kbd {
+  font-size: 8px;
+  padding: 1px 3px;
+}
+.subtle {
+  font-size: 8px;
+  color: #8d967c;
+}
+.skill-panel {
+  flex: 1;
+  padding-bottom: 12px;
+}
+.skill-panel .panel-heading {
+  margin-bottom: 10px;
+}
+.skill {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 11px;
+  border: 0;
+  border-bottom: 1px solid #eef0e6;
+  background: none;
+  text-align: left;
+  padding: 12px 0;
+  position: relative;
+}
+.skill:hover:not(:disabled) {
+  background: #f5f5ec;
+  border-radius: 6px;
+}
+.skill-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.poop {
+  background: #f4eadd;
+}
+.dash {
+  background: #faf0cf;
+  color: #bf9741;
+  font-size: 28px;
+}
+.shield {
+  background: #e7eddd;
+  color: #7e9870;
+  font-size: 30px;
+}
+.skill-copy {
+  flex: 1;
+}
+.skill-copy strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 650;
+}
+.skill-copy small {
+  display: block;
+  margin-top: 5px;
+  color: #8a9379;
+  font-size: 9px;
+}
+.skill-key {
+  font:
+    10px ui-monospace,
+    monospace;
+  min-width: 21px;
+  text-align: center;
+  padding: 4px;
+  border: 1px solid #e4e6da;
+  border-radius: 5px;
+  color: #889373;
+}
+.skill:disabled {
+  opacity: 0.55;
+}
+.skill-foot {
+  font-size: 8px;
+  color: #8c977b;
+  margin-top: 11px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.skill-foot > span {
+  color: #a0ae87;
+}
+.tips-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  padding: 26px 0;
+}
+.tips-row > div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.tip-number {
+  font:
+    italic 26px Georgia,
+    serif;
+  color: #b0bd9e;
+}
+.tips-row p {
+  margin: 0;
+}
+.tips-row strong {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #7b8571;
+}
+.tips-row small {
+  display: block;
+  font-size: 9px;
+  color: #8c977d;
+  margin-top: 6px;
+}
+footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding: 20px 0;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #8e997e;
+}
+footer > span:nth-child(2) {
+  font-size: 9px;
+}
+.footer-star {
+  color: #9ea988;
+  font-size: 14px;
+  margin-left: 5px;
+}
+footer kbd {
+  font-size: 8px;
+}
+.toast {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translate(-50%, 10px);
+  background: #fffdf5ef;
+  border: 1px solid #d8dfc7;
+  border-radius: 9px;
+  box-shadow: 0 4px 15px #45583410;
+  color: #657754;
+  padding: 11px 16px;
+  font-size: 11px;
+  opacity: 0;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+  pointer-events: none;
+  max-width: 90%;
+  text-align: center;
+  z-index: 3;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.combo {
+  position: absolute;
+  right: 24px;
+  top: 86px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #b38235;
+  pointer-events: none;
+}
+.radio {
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  transform: translateX(-50%);
+  max-width: 55%;
+  background: #fffdf1e6;
+  border: 1px solid #c2cdb1;
+  border-radius: 8px;
+  padding: 7px 12px;
+  pointer-events: none;
+  box-shadow: 2px 3px 0 #bcc9aa55;
+  text-align: center;
+}
+.radio[hidden] {
+  display: none;
+}
+.radio span {
+  display: block;
+  font-size: 8px;
+  color: #9a9f82;
+  margin-bottom: 4px;
+  letter-spacing: 2px;
+}
+.radio strong {
+  font-size: 11px;
+  font-weight: 500;
+  color: #667451;
+  line-height: 1.6;
+}
+.camera-view {
+  margin-top: 12px;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e6eadb;
+  aspect-ratio: 4/3;
+}
+.camera-view[hidden] {
+  display: none;
+}
+.camera-view video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 23%;
+  transform: scaleX(-1) scale(1.08);
+  transform-origin: center 27%;
+}
+#poseOverlay {
+  transform: scale(1.08);
+  transform-origin: center 27%;
+}
+.camera-view p {
+  position: absolute;
+  bottom: 0;
+  margin: 0;
+  width: 100%;
+  padding: 7px;
+  font-size: 9px;
+  text-align: center;
+  background: #fffdefde;
+  color: #647451;
+}
+dialog {
+  border: 1px solid #dfe3d3;
+  border-radius: 18px;
+  padding: 35px;
+  max-width: 490px;
+  width: calc(100% - 30px);
+  color: var(--ink);
+  background: var(--cream);
+  box-shadow: 0 24px 100px #273b3440;
+}
+dialog::backdrop {
+  background: #273b344d;
+  backdrop-filter: blur(5px);
+}
+dialog h2 {
+  font-size: 24px;
+  margin: 15px 0;
+}
+dialog p,
+dialog li {
+  font-size: 12px;
+  color: #758269;
+  line-height: 1.9;
+}
+dialog ul {
+  padding-left: 18px;
+  margin: 20px 0 25px;
+}
+dialog li {
+  margin: 7px 0;
+}
+.dialog-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  border: 0;
+  background: none;
+  font-size: 25px;
+  color: #8b9581;
+}
+@media (min-width: 1500px) {
+  .stage {
+    height: 490px;
+  }
+  .control-panel {
+    padding: 25px;
+  }
+  .fly-button {
+    padding: 18px 8px;
+  }
+  .skill {
+    padding: 14px 0;
+  }
+}
+@media (max-width: 1100px) {
+  .app {
+    padding: 0 3%;
+  }
+  .game-layout {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 16px;
+  }
+  .control-panel,
+  .skill-panel {
+    padding: 16px;
+  }
+  .overlay h2 {
+    font-size: 39px;
+  }
+  .stage {
+    height: 426px;
+  }
+  .header-middle {
+    display: none;
+  }
+  .weather {
+    display: none;
+  }
+  .scene-stamp {
+    font-size: 8px;
+  }
+  .intro {
+    padding-top: 27px;
+  }
+  .tips-row {
+    gap: 12px;
+  }
+}
+@media (max-width: 760px) {
+  .app {
+    padding: 0 18px;
+  }
+  .topbar {
+    height: 76px;
+  }
+  .brand {
+    font-size: 18px;
+  }
+  .brand small {
+    font-size: 6px;
+    letter-spacing: 1.4px;
+  }
+  .brand-mark {
+    width: 37px;
+    height: 37px;
+    font-size: 25px;
+  }
+  .header-actions {
+    gap: 14px;
+  }
+  .icon-button > span:not(.question) {
+    display: none;
+  }
+  .intro {
+    padding: 26px 0 23px;
+  }
+  h1 {
+    font-size: 27px;
+  }
+  .intro .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .intro p {
+    font-size: 10px;
+    max-width: 225px;
+    line-height: 1.8;
+  }
+  .personal-best {
+    padding: 10px 12px;
+    gap: 0;
+    background: none;
+  }
+  .best-icon {
+    display: none;
+  }
+  .personal-best small {
+    font-size: 8px;
+  }
+  .personal-best strong {
+    font-size: 21px;
+  }
+  .game-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .stage {
+    height: 380px;
+  }
+  .stage-top {
+    height: 44px;
+    padding: 0 14px;
+  }
+  .in-game-hud {
+    inset: 17px 17px auto;
+  }
+  .overlay {
+    padding: 55px 7%;
+  }
+  .overlay h2 {
+    font-size: 37px;
+  }
+  .overlay p {
+    max-width: 180px;
+    font-size: 10px;
+  }
+  .overlay .start-button {
+    min-width: 150px;
+    padding: 11px 17px;
+  }
+  .scene-stamp {
+    right: 15px;
+    bottom: 20px;
+    font-size: 8px;
+  }
+  .sidebar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .panel-heading h2 {
+    font-size: 11px;
+  }
+  .pill {
+    font-size: 7px;
+    padding: 3px;
+  }
+  .panel-subtitle {
+    font-size: 9px;
+    margin-bottom: 12px;
+  }
+  .control-panel,
+  .skill-panel {
+    padding: 12px;
+  }
+  .mode-switch button {
+    font-size: 8px;
+  }
+  .fly-button {
+    margin-top: 10px;
+    padding: 6px;
+  }
+  .fly-button strong {
+    font-size: 11px;
+  }
+  .fly-button > span:last-child {
+    font-size: 8px;
+  }
+  .fly-button kbd {
+    display: none;
+  }
+  .control-tip {
+    margin-top: 10px;
+    gap: 6px;
+  }
+  .control-tip p,
+  .control-tip p > span {
+    font-size: 8px;
+  }
+  .skill {
+    gap: 7px;
+    padding: 13px 0;
+  }
+  .skill-icon {
+    width: 26px;
+    height: 30px;
+    font-size: 20px;
+  }
+  .skill-copy strong {
+    font-size: 10px;
+  }
+  .skill-copy small {
+    font-size: 8px;
+  }
+  .skill-key {
+    min-width: 16px;
+    padding: 3px;
+  }
+  .subtle {
+    display: none;
+  }
+  .skill-foot {
+    font-size: 8px;
+    line-height: 1.6;
+  }
+  .tips-row {
+    grid-template-columns: 1fr;
+    padding: 22px 4px;
+    gap: 17px;
+  }
+  .tips-row > div {
+    gap: 13px;
+  }
+  .tips-row p {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .tips-row small {
+    margin: 0;
+    font-size: 9px;
+  }
+  .tip-number {
+    font-size: 19px;
+  }
+  .tips-row strong {
+    font-size: 10px;
+  }
+  footer {
+    font-size: 7px;
+    letter-spacing: 0.5px;
+  }
+  footer > span:last-child {
+    display: none;
+  }
+  footer > span:nth-child(2) {
+    font-size: 8px;
+  }
+  .route {
+    padding: 14px 16px;
+  }
+  .camera-view {
+    aspect-ratio: 1;
+  }
+  body.playing .intro {
+    display: none;
+  }
+  body.playing .topbar {
+    height: 60px;
+  }
+  body.playing .game-layout {
+    margin-top: 14px;
+  }
+  body.playing .stage {
+    height: clamp(240px, 43dvh, 380px);
+  }
+  body.playing .tips-row,
+  body.playing footer {
+    display: none;
+  }
+  body.playing .panel-subtitle,
+  body.playing .control-tip,
+  body.playing .skill-foot {
+    display: none;
+  }
+  body.playing .skill {
+    padding: 8px 0;
+  }
+  body.playing .route {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  body.playing .route-label {
+    display: none;
+  }
+  .radio {
+    top: 65px;
+    max-width: 85%;
+    width: max-content;
+  }
+  .radio strong {
+    font-size: 10px;
+  }
+  .radio span {
+    display: none;
+  }
+  .combo {
+    top: 47px;
+    font-size: 11px;
+  }
+}
+
+/* 最终手机端覆盖：保持在文件末尾，确保优先级高于历史断点规则 */
+@media (max-width: 760px) {
+  body { overflow-x: hidden; }
+  .app { width: 100%; max-width: none; padding: 0 10px 24px; }
+  .topbar { min-height: 58px; height: auto; padding: 10px 0; }
+  .brand { gap: 8px; font-size: 15px; }
+  .brand-mark { width: 32px; height: 32px; }
+  .header-actions { gap: 6px; }
+  .icon-button { width: 34px; height: 34px; padding: 0; font-size: 16px; }
+  .intro { display: block; padding: 16px 2px 12px; }
+  .intro h1 { max-width: 100%; font-size: clamp(24px, 7.4vw, 32px); line-height: 1.16; }
+  .intro p { max-width: 100%; margin: 7px 0 10px; font-size: 11px; }
+  .personal-best { display: inline-flex; margin-top: 2px; padding: 7px 10px; }
+  .game-layout { display: flex; flex-direction: column; gap: 12px; }
+  .flight-panel { order: 1; min-width: 0; }
+  .sidebar { order: 2; display: flex; flex-direction: column; gap: 10px; }
+  .stage-top { min-height: 42px; padding: 0 10px; }
+  .location { min-width: 0; gap: 5px; }
+  .location strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+  .location .weather { display: none; }
+  .stage-buttons { gap: 4px; }
+  .small-button { width: 32px; height: 32px; }
+  .stage, body.playing .stage { height: min(62dvh, 560px); min-height: 400px; }
+  .overlay { padding: 74px 8% 0; }
+  .overlay h2 { font-size: clamp(28px, 9vw, 38px); }
+  .overlay .start-button { min-height: 46px; font-size: 13px; }
+  .in-game-hud { inset: 12px 12px auto; }
+  .score-chip strong { font-size: 24px; }
+  .health-chip #healthText { font-size: 18px; }
+  .flight-instruments { left: 10px; right: 10px; bottom: 12px; justify-content: space-around; width: auto; }
+  .flight-instruments > div { min-width: 0; flex: 1; padding: 0 5px; text-align: center; }
+  .flight-instruments strong { font-size: 18px; }
+  .stage-below { padding: 10px 4px 0; }
+  .mobile-steer { position: static; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .mobile-steer button { min-height: 48px; border-radius: 14px; font-size: 22px; touch-action: none; }
+  /* 摄像头卡片压在奶龙画面的右上角，保持独立的安全区域 */
+  .game-layout { position: relative; }
+  .camera-panel, body.playing .camera-panel {
+    position: absolute;
+    top: 54px;
+    right: 10px;
+    z-index: 32;
+    order: 0;
+    width: 132px;
+    max-width: 40vw;
+    padding: 8px;
+    margin: 0;
+    border-radius: 12px;
+    background: rgba(255, 253, 245, 0.94);
+    box-shadow: 0 8px 22px rgba(24, 40, 60, 0.18);
+  }
+  .camera-panel .panel-heading { display: flex; align-items: center; }
+  .camera-panel .panel-heading h2 { font-size: 10px; }
+  .camera-panel .mode-switch { margin-top: 6px; gap: 4px; }
+  .camera-panel .mode-switch button { min-height: 30px; padding: 4px 3px; font-size: 9px; }
+  .camera-panel .camera-view { max-height: 92px; }
+  body.playing .camera-panel { display: block; }
+  body.playing .camera-panel .camera-view, body.playing .camera-panel .steer-feedback, body.playing .camera-panel #recenterBtn { display: none; }
+  .control-panel, .skill-panel, body.playing .control-panel, body.playing .skill-panel { width: auto; grid-column: auto; grid-row: auto; padding: 13px; }
+  .skill { min-height: 48px; }
+  .route { padding: 10px 4px; }
+  .route-stops { font-size: 8px; }
+  .toast, body.playing .toast { left: 10px; right: 10px; bottom: 10px; width: auto; max-width: none; text-align: center; }
+
+  /* 手机端只保留一个固定飞行画面；摄像头嵌在主游戏框右上角 */
+  body.playing {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body.playing .app {
+    height: 100dvh;
+    overflow: hidden;
+    padding-bottom: 0;
+  }
+  body.playing .intro,
+  body.playing .sidebar,
+  body.playing .route,
+  body.playing .tips-row,
+  body.playing footer {
+    display: none;
+  }
+  body.playing .game-layout,
+  body.playing .flight-panel {
+    height: calc(100dvh - 58px);
+    min-height: 0;
+  }
+  body.playing .game-layout { display: block; }
+  body.playing .stage-top { display: flex; }
+  body.playing .stage,
+  body.playing .stage { height: calc(100dvh - 122px); min-height: 0; }
+  body.playing .camera-panel {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    width: 124px;
+    max-width: 38vw;
+    padding: 7px;
+    z-index: 36;
+    background: rgba(255, 253, 245, 0.9);
+  }
+  body.playing .camera-panel .panel-heading { display: none; }
+  body.playing .camera-panel .mode-switch { margin: 0; }
+  body.playing .camera-panel .mode-switch button { min-height: 28px; font-size: 9px; }
+  body.playing .camera-panel .camera-view,
+  body.playing .camera-panel .steer-feedback,
+  body.playing .camera-panel #recenterBtn { display: none; }
+  body.playing .in-game-hud { top: 10px; }
+  body.playing .health-chip { margin-top: 52px; }
+  body.playing .stage-below { padding-top: 8px; }
+  body.playing .mobile-steer button { min-height: 44px; }
+
+  /* 开始前也嵌在主画面右上角，避免它回到页面底部 */
+  .game-layout > .sidebar > .camera-panel,
+  .game-layout > .camera-panel {
+    position: absolute !important;
+    top: 54px;
+    right: 10px;
+    left: auto;
+    bottom: auto;
+    z-index: 36;
+    width: 124px;
+    max-width: 38vw;
+    margin: 0;
+    padding: 7px;
+  }
+  .game-layout > .sidebar > .camera-panel .panel-heading { display: none; }
+  .game-layout > .sidebar > .camera-panel .mode-switch { margin: 0; }
+  .game-layout > .sidebar > .camera-panel .mode-switch button { min-height: 28px; font-size: 9px; }
+
+  /* 手机游玩态：整屏只留游戏，不让页面标题参与布局 */
+  body.playing .topbar { display: none; }
+  body.playing .game-layout,
+  body.playing .flight-panel { height: 100dvh; }
+  body.playing .stage-top { display: none; }
+  body.playing .stage,
+  body.playing .flight-panel .stage { height: calc(100dvh - 62px); }
+  body.playing .stage-below { height: 62px; box-sizing: border-box; padding: 7px 8px; }
+
+  /* 小型实时摄像头画中画：始终显示视频，不遮住血量和提示 */
+  body.playing .game-layout > .sidebar > .camera-panel {
+    top: 10px;
+    right: 10px;
+    width: 96px;
+    max-width: 28vw;
+    padding: 4px;
+    border-radius: 9px;
+    background: rgba(20, 34, 37, 0.72);
+    border: 1px solid rgba(255,255,255,.35);
+  }
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view {
+    display: block;
+    height: 68px;
+    max-height: none;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 6px;
+  }
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view video,
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view p,
+  body.playing .game-layout > .sidebar > .camera-panel .steer-feedback,
+  body.playing .game-layout > .sidebar > .camera-panel #recenterBtn,
+  body.playing .game-layout > .sidebar > .camera-panel .panel-heading { display: none; }
+  body.playing .game-layout > .sidebar > .camera-panel .mode-switch { display: none; }
+  body.playing .in-game-hud { left: 10px; right: 118px; }
+  body.playing .health-chip { margin-top: 0; }
+
+  /* 手机端从进入页面起就是固定游戏屏，不再把体感模块随侧栏隐藏 */
+  html, body { height: 100%; overflow: hidden; }
+  body { overscroll-behavior: none; }
+  .app { height: 100dvh; overflow: hidden; padding: 0; }
+  .topbar, .intro, .route, .tips-row, footer { display: none; }
+  .game-layout, .flight-panel { height: 100dvh; min-height: 0; }
+  .game-layout { display: block; }
+  .stage-top { display: none; }
+  .stage, body.playing .stage { height: calc(100dvh - 62px); min-height: 0; border-radius: 0; }
+  .stage-below { height: 62px; padding: 7px 8px; box-sizing: border-box; }
+  .sidebar, body.playing .sidebar { display: block; height: 0; }
+  .control-panel, .skill-panel,
+  body.playing .control-panel, body.playing .skill-panel { display: none; }
+  .game-layout > .sidebar > .camera-panel,
+  body.playing .game-layout > .sidebar > .camera-panel {
+    display: block;
+    position: absolute !important;
+    top: 10px;
+    right: 10px;
+    width: 124px;
+    max-width: 38vw;
+    z-index: 40;
+    padding: 7px;
+  }
+  .game-layout > .sidebar > .camera-panel .mode-switch,
+  body.playing .game-layout > .sidebar > .camera-panel .mode-switch {
+    display: flex;
+    margin: 0;
+  }
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view {
+    display: block;
+    height: 68px;
+    margin-top: 4px;
+  }
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view video,
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view canvas {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view[hidden] { display: none; }
+  body.playing .in-game-hud { left: 10px; right: 145px; }
+  /* 手机端默认体感，取消重复的方向键 */
+  .stage-below, body.playing .stage-below { display: none; }
+  body.playing .stage, body.playing .flight-panel .stage { height: 100dvh; }
+
+  /* 手机体感开关：只保留一个胶囊滑块，收起“手动”按钮 */
+  .game-layout > .sidebar > .camera-panel #keyboardBtn,
+  body.playing .game-layout > .sidebar > .camera-panel #keyboardBtn { display: none; }
+  .game-layout > .sidebar > .camera-panel #cameraBtn,
+  body.playing .game-layout > .sidebar > .camera-panel #cameraBtn {
+    display: block;
+    width: 100%;
+    min-height: 28px;
+    padding: 4px 8px;
+    border: 1px solid rgba(255,255,255,.5);
+    border-radius: 999px;
+    background: #b9e86e;
+    color: #244229;
+    font-size: 9px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .game-layout > .sidebar > .camera-panel #cameraBtn::before { content: "● "; font-size: 8px; }
+  body.playing .game-layout > .sidebar > .camera-panel {
+    width: 112px;
+    box-sizing: border-box;
+    padding: 5px;
+  }
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view {
+    height: 62px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  body.playing .game-layout > .sidebar > .camera-panel .mode-switch,
+  body.playing .game-layout > .sidebar > .camera-panel #cameraBtn { width: 100%; box-sizing: border-box; }
+  #overlayTag { letter-spacing: .08em; }
+
+  .pose-loader {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 42;
+    width: min(280px, 72vw);
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(255,253,245,.95);
+    box-shadow: 0 12px 30px rgba(25,44,55,.2);
+    text-align: center;
+    color: #28454a;
+  }
+  .pose-loader[hidden] { display: none; }
+  .pose-loader strong { display: block; font-size: 13px; }
+  .pose-loader span { display: block; margin-top: 7px; font-size: 10px; color: #6c8180; }
+  .pose-loader-track { height: 8px; margin-top: 11px; overflow: hidden; border-radius: 999px; background: #e4eadc; }
+  .pose-loader-track i { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#ef7650,#f0c35b,#8bd36e); transition: width .25s ease; }
+
+  .ground-warning {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 34;
+    width: 66px;
+    height: 66px;
+    display: grid;
+    place-items: center;
+    border: 5px solid #ef4f43;
+    border-radius: 50%;
+    background: rgba(112, 18, 20, .86);
+    color: #fff;
+    box-shadow: 0 0 0 5px rgba(239,79,67,.2), 0 7px 20px rgba(91,20,20,.35);
+    animation: groundPulse .75s ease-in-out infinite;
+  }
+  .ground-warning[hidden] { display: none; }
+  .ground-warning b { display: block; font-size: 28px; line-height: 1; text-align: center; }
+  .ground-warning span { display: block; margin-top: -2px; font-size: 9px; font-weight: 800; }
+  @keyframes groundPulse { 50% { transform: scale(1.08); box-shadow: 0 0 0 9px rgba(239,79,67,.12), 0 7px 20px rgba(91,20,20,.35); } }
+  @media (max-width: 760px) {
+    .ground-warning { top: 12px; left: 12px; width: 58px; height: 58px; border-width: 4px; }
+    .ground-warning b { font-size: 24px; }
+    .ground-warning span { font-size: 8px; }
+    .pose-loader { top: 46%; }
+  }
+}
+
+/* 手机端第二层布局：让游戏先于控制面板，避免浮层互相遮挡 */
+@media (max-width: 760px) {
+  body {
+    overflow-x: hidden;
+  }
+  .app {
+    width: 100%;
+    max-width: none;
+    padding: 0 10px 24px;
+  }
+  .topbar {
+    min-height: 58px;
+    height: auto;
+    padding: 10px 0;
+  }
+  .brand {
+    gap: 8px;
+    font-size: 15px;
+  }
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  .icon-button {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    font-size: 16px;
+  }
+  .intro {
+    display: block;
+    padding: 16px 2px 12px;
+  }
+  .intro h1 {
+    max-width: 100%;
+    font-size: clamp(24px, 7.4vw, 32px);
+    line-height: 1.16;
+  }
+  .intro p {
+    max-width: 100%;
+    margin: 7px 0 10px;
+    font-size: 11px;
+  }
+  .personal-best {
+    display: inline-flex;
+    margin-top: 2px;
+    padding: 7px 10px;
+  }
+  .game-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .flight-panel {
+    order: 1;
+    min-width: 0;
+  }
+  .sidebar {
+    order: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .stage-top {
+    min-height: 42px;
+    padding: 0 10px;
+  }
+  .location {
+    min-width: 0;
+    gap: 5px;
+  }
+  .location strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  .location .weather {
+    display: none;
+  }
+  .stage-buttons {
+    gap: 4px;
+  }
+  .small-button {
+    width: 32px;
+    height: 32px;
+  }
+  .stage,
+  body.playing .stage {
+    height: min(62dvh, 560px);
+    min-height: 400px;
+  }
+  .overlay {
+    padding: 74px 8% 0;
+  }
+  .overlay h2 {
+    font-size: clamp(28px, 9vw, 38px);
+  }
+  .overlay .start-button {
+    min-height: 46px;
+    font-size: 13px;
+  }
+  .in-game-hud {
+    inset: 12px 12px auto;
+  }
+  .score-chip span,
+  .health-chip span:first-child {
+    font-size: 9px;
+  }
+  .score-chip strong {
+    font-size: 24px;
+  }
+  .health-chip {
+    gap: 3px;
+  }
+  .health-chip #healthText {
+    font-size: 18px;
+  }
+  .flight-instruments {
+    left: 10px;
+    right: 10px;
+    bottom: 12px;
+    justify-content: space-around;
+    width: auto;
+  }
+  .flight-instruments > div {
+    min-width: 0;
+    flex: 1;
+    padding: 0 5px;
+    text-align: center;
+  }
+  .flight-instruments strong {
+    font-size: 18px;
+  }
+  .stage-below {
+    padding: 10px 4px 0;
+  }
+  .mobile-steer {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .mobile-steer button {
+    min-height: 48px;
+    border-radius: 14px;
+    font-size: 22px;
+    touch-action: none;
+  }
+  .camera-panel,
+  body.playing .camera-panel {
+    position: static;
+    order: -1;
+    width: auto;
+    max-width: none;
+    padding: 11px 12px;
+    margin: 0;
+  }
+  .camera-panel .panel-heading {
+    display: flex;
+  }
+  .camera-panel .mode-switch {
+    margin-top: 8px;
+  }
+  .camera-panel .camera-view {
+    max-height: 150px;
+  }
+  .camera-panel .mode-switch button {
+    min-height: 36px;
+    font-size: 11px;
+  }
+  body.playing .camera-panel {
+    display: block;
+  }
+  body.playing .camera-panel .camera-view,
+  body.playing .camera-panel .steer-feedback,
+  body.playing .camera-panel #recenterBtn {
+    display: none;
+  }
+  .control-panel,
+  .skill-panel {
+    width: auto;
+    padding: 13px;
+  }
+  .control-panel,
+  .skill-panel,
+  body.playing .control-panel,
+  body.playing .skill-panel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .skill {
+    min-height: 48px;
+  }
+  .route {
+    padding: 10px 4px;
+  }
+  .route-stops {
+    font-size: 8px;
+  }
+  .toast,
+  body.playing .toast {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+    max-width: none;
+    text-align: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* 3D flight cockpit */
+.app {
+  max-width: 1760px;
+  padding: 0 3.5%;
+}
+.intro {
+  padding: 23px 0;
+}
+.topbar {
+  height: 78px;
+}
+.game-layout {
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 18px;
+}
+.stage {
+  height: 630px;
+  background: #b8dded;
+}
+.stage-top {
+  height: 46px;
+}
+.overlay {
+  background: linear-gradient(
+    90deg,
+    #f6f4deeb 0%,
+    #f3f3dfaa 24%,
+    #ecf2e20a 63%
+  );
+  padding-left: 5%;
+}
+.overlay h2 {
+  font-size: 48px;
+  color: #304940;
+}
+.overlay p {
+  font-size: 13px;
+  color: #657d69;
+  line-height: 1.9;
+}
+.scene-stamp {
+  bottom: 125px;
+  right: 28px;
+  color: #55766e;
+  background: #eff7e865;
+  border-color: #a8c8bb;
+}
+.overlay-content {
+  margin-top: -40px;
+}
+.flight-tag {
+  font-size: 11px;
+}
+.in-game-hud {
+  z-index: 2;
+}
+.score-chip > span,
+.health-chip > span:first-child {
+  color: #41675f;
+  text-shadow: 0 1px 4px #fff8;
+}
+.score-chip strong {
+  color: #2e5952;
+  font-size: 28px;
+}
+.health-chip > span:last-child {
+  color: #d47343;
+}
+.flight-instruments {
+  position: absolute;
+  bottom: 22px;
+  left: 24px;
+  display: flex;
+  gap: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: #f9fff0cd;
+  border: 1px solid #ffffff9c;
+  border-radius: 12px;
+  padding: 12px 0;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 5px 24px #264e4c0a;
+}
+.flight-instruments > div {
+  padding: 0 20px;
+  border-right: 1px solid #a7c9b846;
+  min-width: 106px;
+}
+.flight-instruments > div:last-child {
+  border: 0;
+}
+.flight-instruments span {
+  font-size: 9px;
+  color: #748979;
+  display: block;
+  margin-bottom: 4px;
+}
+.flight-instruments strong {
+  font:
+    600 24px ui-monospace,
+    monospace;
+  color: #365e53;
+}
+.flight-instruments small {
+  font: 9px sans-serif;
+  color: #7c9482;
+  margin-left: 4px;
+}
+.height-ruler {
+  position: absolute;
+  right: 23px;
+  top: 36%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  color: #4f7870;
+  pointer-events: none;
+  font-size: 10px;
+  text-shadow: 0 1px 3px #fff;
+}
+.height-ruler i {
+  height: 45px;
+  width: 15px;
+  border-right: 1px solid #6c9c9566;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 10px,
+    #6c9c9566 11px 12px
+  );
+  opacity: 0.7;
+}
+.height-ruler b {
+  font:
+    600 17px ui-monospace,
+    monospace;
+}
+.height-ruler small {
+  font-size: 8px;
+}
+.reticle {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 25px;
+  height: 25px;
+  border: 1px solid #ffffff60;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.reticle i {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fffa;
+  margin: 10px;
+}
+.target-hint {
+  position: absolute;
+  transform: translateX(-50%);
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: #fff5d9dd;
+  color: #927338;
+  font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.target-hint[hidden] {
+  display: none;
+}
+.fuel-heading {
+  margin-top: 18px;
+}
+.fuel-switch {
+  display: flex;
+  gap: 6px;
+  margin-top: 11px;
+}
+.fuel-switch button {
+  width: 33.33%;
+  padding: 10px 5px 8px;
+  background: #f3f3e9;
+  color: #8b927e;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 10px;
+}
+.fuel-switch span {
+  display: block;
+  font-size: 23px;
+  margin-bottom: 5px;
+}
+.fuel-switch .selected {
+  background: #fff0d3;
+  border-color: #e4c58c;
+  color: #9b7034;
+  box-shadow: 0 2px 0 #e9d7ad;
+}
+.fuel-note {
+  font-size: 9px;
+  color: #9d967e;
+  line-height: 1.7;
+  margin: 9px 0 0;
+}
+.flight-mode {
+  margin-top: 14px;
+}
+.panel-subtitle {
+  line-height: 1.7;
+  margin-bottom: 0;
+  font-size: 9px;
+}
+.fly-button {
+  margin-top: 13px;
+  padding: 8px 7px 11px;
+}
+.control-panel,
+.skill-panel {
+  padding: 18px;
+}
+.skill-panel {
+  flex: 0;
+}
+.skill {
+  padding: 10px 0;
+}
+.skill:disabled {
+  opacity: 0.72;
+}
+.sidebar {
+  gap: 12px;
+}
+.camera-panel {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fcfcf7;
+  order: -1;
+}
+.camera-panel .mode-switch {
+  margin-top: 12px;
+}
+.toast {
+  bottom: 118px;
+  max-width: 70%;
+  z-index: 5;
+}
+.radio {
+  top: 22px;
+  max-width: 60%;
+  background: #fffdf0d9;
+}
+.combo {
+  top: 78px;
+  right: 25px;
+  font-size: 12px;
+}
+.route {
+  padding-top: 13px;
+  padding-bottom: 12px;
+}
+.mobile-steer {
+  display: none;
+}
+.render-error {
+  position: absolute;
+  inset: 0;
+  background: #e9eee4;
+  z-index: 20;
+  display: grid;
+  align-content: center;
+  text-align: center;
+  padding: 25px;
+  color: #586c53;
+}
+.render-error[hidden] {
+  display: none;
+}
+.render-error h2 {
+  font-size: 24px;
+}
+.render-error p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.render-error button {
+  justify-self: center;
+  padding: 12px 25px;
+  border: 0;
+  border-radius: 8px;
+  background: #edb964;
+  color: #543f27;
+}
+.flight-panel:fullscreen {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  background: #e7eee1;
+}
+.flight-panel:fullscreen .stage {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+.flight-panel:fullscreen .stage-top {
+  height: 44px;
+  flex-shrink: 0;
+}
+.flight-panel:fullscreen .route {
+  display: none;
+}
+.flight-panel:fullscreen .mobile-steer {
+  display: flex;
+}
+.tips-row {
+  padding: 22px 0;
+}
+.camera-view {
+  max-height: 160px;
+}
+@media (max-width: 1100px) {
+  .game-layout {
+    grid-template-columns: minmax(0, 1fr) 250px;
+  }
+  .control-panel,
+  .skill-panel,
+  .camera-panel {
+    padding: 14px;
+  }
+  .stage {
+    height: 620px;
+  }
+  .overlay h2 {
+    font-size: 40px;
+  }
+  .overlay p {
+    font-size: 11px;
+    max-width: 220px;
+  }
+  .flight-instruments > div {
+    padding: 0 12px;
+    min-width: 88px;
+  }
+  .flight-instruments strong {
+    font-size: 21px;
+  }
+  .flight-tag {
+    font-size: 9px;
+  }
+}
+@media (max-width: 760px) {
+  .app {
+    padding: 0 12px;
+  }
+  .topbar {
+    height: 65px;
+  }
+  .brand {
+    font-size: 16px;
+  }
+  .brand small {
+    font-size: 6px;
+    letter-spacing: 0.8px;
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+  .intro {
+    padding: 20px 3px;
+  }
+  .intro h1 {
+    font-size: 25px;
+  }
+  .intro .eyebrow {
+    font-size: 7px;
+  }
+  .intro p {
+    font-size: 10px;
+    max-width: 225px;
+  }
+  .personal-best {
+    padding: 8px;
+  }
+  .personal-best strong {
+    font-size: 19px;
+  }
+  .game-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .stage {
+    height: 500px;
+  }
+  .overlay {
+    padding-left: 6%;
+    align-items: flex-start;
+    padding-top: 97px;
+    background: linear-gradient(90deg, #f5f4debd, #f5f4de35 65%, transparent);
+  }
+  .overlay-content {
+    margin: 0;
+  }
+  .overlay h2 {
+    font-size: 32px;
+    line-height: 1.3;
+    letter-spacing: -1px;
+  }
+  .overlay p {
+    font-size: 10px;
+    max-width: 160px;
+  }
+  .overlay .start-button {
+    font-size: 11px;
+    min-width: 160px;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .start-tip {
+    font-size: 8px;
+    gap: 4px;
+  }
+  .scene-stamp {
+    font-size: 7px;
+    right: 10px;
+    bottom: 150px;
+    letter-spacing: 1px;
+  }
+  .flight-instruments {
+    bottom: 16px;
+    left: 12px;
+    padding: 10px 0;
+  }
+  .flight-instruments > div {
+    padding: 0 10px;
+    min-width: 83px;
+  }
+  .flight-instruments strong {
+    font-size: 19px;
+  }
+  .flight-instruments small {
+    font-size: 7px;
+  }
+  .flight-instruments span {
+    font-size: 8px;
+  }
+  .height-ruler {
+    right: 10px;
+    top: 39%;
+    font-size: 8px;
+    gap: 7px;
+  }
+  .height-ruler i {
+    height: 30px;
+  }
+  .height-ruler b {
+    font-size: 12px;
+  }
+  .height-ruler small {
+    display: none;
+  }
+  .in-game-hud {
+    inset: 15px 15px auto;
+  }
+  .score-chip strong {
+    font-size: 23px;
+  }
+  .radio {
+    top: 66px;
+    width: max-content;
+    max-width: 90%;
+  }
+  .radio strong {
+    font-size: 9px;
+  }
+  .toast {
+    bottom: 102px;
+    max-width: 85%;
+    width: max-content;
+    font-size: 10px;
+    padding: 9px 12px;
+  }
+  .sidebar {
+    grid-template-columns: 1.05fr 1fr;
+    gap: 10px;
+  }
+  .control-panel,
+  .skill-panel,
+  .camera-panel {
+    padding: 12px;
+  }
+  .control-panel {
+    grid-row: 1/3;
+  }
+  .skill-panel {
+    grid-column: 2;
+  }
+  .camera-panel {
+    grid-column: 2;
+  }
+  .fuel-heading {
+    margin-top: 12px;
+  }
+  .fuel-heading h2 {
+    font-size: 10px;
+  }
+  .fuel-switch {
+    gap: 3px;
+    margin-top: 8px;
+  }
+  .fuel-switch button {
+    font-size: 8px;
+    padding: 7px 2px;
+  }
+  .fuel-switch span {
+    font-size: 19px;
+  }
+  .fuel-note {
+    font-size: 8px;
+  }
+  .flight-mode {
+    margin-top: 10px;
+  }
+  .flight-mode button {
+    font-size: 8px;
+  }
+  .panel-heading h2 {
+    font-size: 10px;
+  }
+  .panel-subtitle {
+    font-size: 8px;
+  }
+  .skill {
+    gap: 5px;
+    padding: 10px 0;
+  }
+  .skill-copy small {
+    font-size: 7px;
+    line-height: 1.6;
+  }
+  .skill-copy strong {
+    font-size: 10px;
+  }
+  .skill-icon {
+    width: 24px;
+    height: 29px;
+  }
+  .skill-key {
+    font-size: 8px;
+    min-width: 17px;
+  }
+  .camera-panel .pill {
+    display: none;
+  }
+  .camera-panel .mode-switch {
+    margin-top: 9px;
+  }
+  .control-tip {
+    display: none;
+  }
+  .camera-view {
+    max-height: 100px;
+  }
+  .fly-button strong {
+    font-size: 11px;
+  }
+  .fly-button > span:last-child {
+    font-size: 8px;
+  }
+  .tips-row {
+    padding: 18px 4px;
+  }
+  .reticle {
+    display: none;
+  }
+  .target-hint {
+    font-size: 8px;
+  }
+  body.playing .stage {
+    height: clamp(340px, 57dvh, 600px);
+  }
+  body.playing .game-layout {
+    margin-top: 8px;
+  }
+  body.playing .topbar {
+    height: 52px;
+  }
+  body.playing .flight-mode,
+  body.playing .fuel-heading,
+  body.playing .fuel-note,
+  body.playing .camera-panel {
+    display: none;
+  }
+  body.playing .control-panel {
+    grid-row: auto;
+  }
+  body.playing .sidebar {
+    align-items: stretch;
+  }
+  body.playing .skill-panel {
+    grid-column: 2;
+  }
+  body.playing .fuel-switch {
+    margin-top: 8px;
+  }
+  body.playing .fly-button {
+    padding: 5px;
+    margin-top: 9px;
+  }
+  body.playing .fly-icon {
+    display: none;
+  }
+  body.playing .skill {
+    padding: 6px 0;
+  }
+  body.playing .flight-instruments {
+    bottom: 79px;
+  }
+  body.playing .toast {
+    bottom: 146px;
+  }
+  body.playing .mobile-steer {
+    display: flex;
+  }
+  .mobile-steer {
+    position: absolute;
+    bottom: 16px;
+    left: 15px;
+    right: 15px;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 4;
+  }
+  .mobile-steer button {
+    width: 55px;
+    height: 46px;
+    touch-action: none;
+    user-select: none;
+    border-radius: 12px;
+    border: 1px solid #fff8;
+    background: #f6ffecd9;
+    color: #547b6c;
+    font-size: 24px;
+    box-shadow: 0 3px 0 #8cb4a266;
+  }
+  .mobile-steer button.held {
+    background: #ffe5a5;
+  }
+  .height-ruler {
+    pointer-events: none;
+  }
+  .scene-stamp {
+    display: none;
+  }
+}
+/* Flight feedback: keep the centre clear for aiming. */
+.skill-icon.roll {
+  background: #eee5f7;
+  color: #a08bb9;
+  font-size: 26px;
+}
+.target-hint.aligned {
+  background: #edffe0e8;
+  color: #4e8055;
+  border: 1px solid #8eba85;
+}
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 0 solid transparent;
+  z-index: 3;
+  transition: box-shadow 0.15s;
+}
+.stage.boosting::after {
+  box-shadow:
+    inset 0 0 75px #c5faff66,
+    inset 0 0 9px #eaffff88;
+}
+.stage.celebrating::after {
+  box-shadow: inset 0 0 55px #ffe6a644;
+}
+@media (max-width: 760px) {
+  body.playing .skill-panel {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+  body.playing .skill {
+    padding: 4px 0;
+  }
+  body.playing .skill-icon {
+    height: 24px;
+    width: 23px;
+    font-size: 19px;
+  }
+  body.playing .skill-copy small {
+    margin-top: 2px;
+    font-size: 7px;
+  }
+  body.playing .skill-panel .panel-heading {
+    margin-bottom: 5px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage.boosting::after,
+  .stage.celebrating::after {
+    box-shadow: none;
+  }
+}
+.flight-panel {
+  align-self: start;
+}
+
+#poseOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.steer-feedback {
+  margin-top: 12px;
+  font-size: 12px;
+  text-align: center;
+  color: #647451;
+}
+.steer-track {
+  position: relative;
+  height: 6px;
+  background: #e6eadb;
+  border-radius: 6px;
+  margin: 12px 8px;
+}
+.steer-track:before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  height: 12px;
+  border-left: 1px solid #839371;
+}
+#steerDot {
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f47846;
+  transform: translateX(-50%);
+  transition: left 0.08s linear;
+}
+#recenterBtn {
+  font: inherit;
+  border: 1px solid #dfe3d3;
+  border-radius: 8px;
+  background: #fffdf5;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+/* ---- 交警追捕警示 ---- */
+.chase {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 10px;
+  border-radius: 14px;
+  background: rgba(23, 33, 58, 0.92);
+  color: #f2f7ff;
+  z-index: 6;
+  pointer-events: none;
+  animation: chasePulse 0.9s ease-in-out infinite;
+}
+.chase[hidden] {
+  display: none;
+}
+.chase-siren {
+  font-size: 18px;
+  line-height: 1;
+}
+.chase-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 170px;
+}
+.chase-body strong {
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+}
+.chase-track {
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+.chase-track i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #ffd23f, #ff5f52);
+  transition: width 0.12s linear;
+}
+@keyframes chasePulse {
+  0%,
+  100% {
+    box-shadow: 0 8px 24px rgba(12, 22, 48, 0.4), 0 0 0 0 rgba(80, 140, 255, 0.55);
+  }
+  50% {
+    box-shadow: 0 8px 24px rgba(12, 22, 48, 0.4), 0 0 0 8px rgba(255, 90, 80, 0);
+  }
+}
+/* ---- 受击反馈 ---- */
+.hit-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 8;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(232, 69, 60, 0) 34%,
+    rgba(232, 69, 60, 0.55) 100%
+  );
+  transition: opacity 0.3s ease-out;
+}
+.hit-flash.on {
+  opacity: 1;
+  transition: none;
+}
+#healthText.hit {
+  animation: heartHit 0.45s ease-out;
+}
+@keyframes heartHit {
+  0% {
+    color: #e8453c;
+    text-shadow: 0 0 14px rgba(232, 69, 60, 0.95);
+  }
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+/* ---- 交警到场：全场闪红灯 ---- */
+.chase-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 5;
+  background:
+    linear-gradient(rgba(255, 42, 32, 0.16), rgba(255, 42, 32, 0.16)),
+    radial-gradient(
+      circle at 50% 45%,
+      rgba(255, 42, 32, 0) 24%,
+      rgba(255, 42, 32, 0.5) 100%
+    );
+  box-shadow: inset 0 0 110px 24px rgba(255, 42, 32, 0.6);
+  transition: opacity 0.25s ease-out;
+}
+.chase-flash.on {
+  animation: chaseAlert 0.7s ease-in-out infinite;
+}
+@keyframes chaseAlert {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chase {
+    animation: none;
+  }
+  #healthText.hit {
+    animation: none;
+  }
+  /* 光敏安全：不闪烁，改为持续红色警戒 */
+  .chase-flash.on {
+    animation: none;
+    opacity: 0.45;
+  }
+}
+
+/* ================== 手机端布局修正 ==================
+   只做追加覆盖，不改动上面的既有规则，尽量降低与其它并行改动的冲突面。 */
+@media (max-width: 760px) {
+  /* 1) 顶栏：三个图标按钮原本被压成 8–15px 宽，图标和文字叠在一起 */
+  .topbar {
+    gap: 10px;
+  }
+  .brand {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .brand small {
+    display: none;
+  }
+  .header-actions {
+    flex: 0 0 auto;
+    gap: 12px;
+  }
+  .icon-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  /* 2) 追捕 / 开局保护横幅原本固定在 top:14px，压住左上角分数和右上角血量。
+        改成收窄后放进两者之间的空档。 */
+  /* 实测：左上角分数 x28–93、右上角血量 x278–347，中间只有 185px。
+     上限压到 180px，长文案宁可换行也绝不压到两侧 HUD。 */
+  .chase {
+    top: 16px;
+    max-width: 180px;
+    padding: 6px 9px 7px;
+    gap: 6px;
+  }
+  .chase-siren {
+    font-size: 14px;
+  }
+  .chase-body {
+    gap: 4px;
+    min-width: 0;
+  }
+  .chase-body strong {
+    font-size: 9px;
+    line-height: 1.3;
+  }
+
+  /* 3) 侧栏在 390px 下被排成两列（每列约 174px），面板内容互相挤压 */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+  .control-panel,
+  .skill-panel,
+  .camera-panel {
+    grid-column: auto;
+    grid-row: auto;
+    width: auto;
+  }
+
+  /* 4) 飞行中原先把「肢体施法」整个 display:none —— 手机上体感模式
+        既进不去也出不来（切回手动和校准按钮都在这个面板里）。
+        改为飞行时仍然显示，并排到最后。 */
+  /* 手机端方向键按设计移除（.stage-below 在 1373 行被 display:none 关掉），
+     触屏改用画面拖动操作。这里不再对 .stage-below / .mobile-steer 做任何覆盖。 */
+
+  /* 6) 提示条固定到视口底部，不再压在游戏画面上 */
+  .toast,
+  body.playing .toast {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    width: auto;
+    max-width: none;
+    transform: translateY(10px);
+    z-index: 45;
+  }
+  .toast.show,
+  body.playing .toast.show {
+    transform: translateY(0);
+  }
+
+  /* 7) 肢体施法：固定到整个页面的右上角，做成紧凑卡片 */
+  .camera-panel,
+  body.playing .camera-panel {
+    display: block;
+    position: fixed;
+    top: 58px;
+    right: 8px;
+    left: auto;
+    bottom: auto;
+    z-index: 40;
+    width: 146px;
+    max-width: 44vw;
+    padding: 7px;
+    margin: 0;
+    border-radius: 12px;
+    background: #fffdf5f7;
+    box-shadow: 0 8px 24px rgba(24, 40, 60, 0.24);
+    order: 0;
+  }
+  .camera-panel .panel-heading {
+    display: none;
+  }
+  .camera-panel .mode-switch {
+    margin-top: 0;
+    gap: 4px;
+  }
+  .camera-panel .mode-switch button {
+    padding: 5px 3px;
+    font-size: 10px;
+  }
+  .camera-panel .camera-view {
+    max-height: 92px;
+    margin-top: 6px;
+  }
+  .camera-panel .steer-feedback {
+    margin-top: 6px;
+    font-size: 9px;
+  }
+  .camera-panel #recenterBtn {
+    margin-top: 5px;
+    padding: 4px 5px;
+    font-size: 9px;
+  }
+  /* 飞行中卡片压在右上角血量的位置上（实测 .camera-panel <-> .health-chip 重叠），
+     所以飞行时只留「手动 / 开启体感」这一行，高度收到 38px 以内；
+     预览和校准在开局前的完整卡片里都能用。 */
+  body.playing .camera-panel .camera-view,
+  body.playing .camera-panel .steer-feedback,
+  body.playing .camera-panel #recenterBtn {
+    display: none;
+  }
+
+  /* 准备界面：右上角浮层会压到标题，让出右侧空间（纪录块改到标题下方） */
+  .intro {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding-right: 152px;
+  }
+
+  /* 最终移动端排版覆盖 */
+  body { overflow-x: hidden; }
+  .app { width: 100%; max-width: none; padding: 0 10px 24px; }
+  .topbar { min-height: 58px; height: auto; padding: 10px 0; }
+  .brand { gap: 8px; font-size: 15px; }
+  .brand-mark { width: 32px; height: 32px; }
+  .header-actions { gap: 6px; }
+  .icon-button { width: 34px; height: 34px; padding: 0; font-size: 16px; }
+  .intro { display: block; padding: 16px 2px 12px; }
+  .intro h1 { max-width: 100%; font-size: clamp(24px, 7.4vw, 32px); line-height: 1.16; }
+  .intro p { max-width: 100%; margin: 7px 0 10px; font-size: 11px; }
+  .personal-best { display: inline-flex; margin-top: 2px; padding: 7px 10px; }
+  .game-layout { display: flex; flex-direction: column; gap: 12px; }
+  .flight-panel { order: 1; min-width: 0; }
+  .sidebar { order: 2; display: flex; flex-direction: column; gap: 10px; }
+  .stage-top { min-height: 42px; padding: 0 10px; }
+  .location { min-width: 0; gap: 5px; }
+  .location strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+  .location .weather { display: none; }
+  .stage-buttons { gap: 4px; }
+  .small-button { width: 32px; height: 32px; }
+  .stage, body.playing .stage { height: min(62dvh, 560px); min-height: 400px; }
+  .overlay { padding: 74px 8% 0; }
+  .overlay h2 { font-size: clamp(28px, 9vw, 38px); }
+  .overlay .start-button { min-height: 46px; font-size: 13px; }
+  .in-game-hud { inset: 12px 12px auto; }
+  .score-chip strong { font-size: 24px; }
+  .health-chip #healthText { font-size: 18px; }
+  .flight-instruments { left: 10px; right: 10px; bottom: 12px; justify-content: space-around; width: auto; }
+  .flight-instruments > div { min-width: 0; flex: 1; padding: 0 5px; text-align: center; }
+  .flight-instruments strong { font-size: 18px; }
+  .stage-below { padding: 10px 4px 0; }
+  .mobile-steer { position: static; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .mobile-steer button { min-height: 48px; border-radius: 14px; font-size: 22px; touch-action: none; }
+  .camera-panel, body.playing .camera-panel { position: static; order: -1; width: auto; max-width: none; padding: 11px 12px; margin: 0; }
+  .camera-panel .panel-heading { display: flex; }
+  .camera-panel .mode-switch { margin-top: 8px; }
+  .camera-panel .mode-switch button { min-height: 36px; font-size: 11px; }
+  .camera-panel .camera-view { max-height: 150px; }
+  body.playing .camera-panel { display: block; }
+  body.playing .camera-panel .camera-view, body.playing .camera-panel .steer-feedback, body.playing .camera-panel #recenterBtn { display: none; }
+  .control-panel, .skill-panel, body.playing .control-panel, body.playing .skill-panel { width: auto; grid-column: auto; grid-row: auto; padding: 13px; }
+  .skill { min-height: 48px; }
+  .route { padding: 10px 4px; }
+  .route-stops { font-size: 8px; }
+  .toast, body.playing .toast { left: 10px; right: 10px; bottom: 10px; width: auto; max-width: none; text-align: center; }
+  /* 顶部模块最终分层：HUD、摄像头、警告各占自己的区域 */
+  .game-layout { position: relative; }
+  .in-game-hud { top: 10px; left: 10px; right: 118px; }
+  .camera-panel, body.playing .camera-panel {
+    position: absolute !important;
+    top: 58px;
+    right: 10px;
+    left: auto;
+    width: 112px;
+    max-width: 34vw;
+    z-index: 40;
+    box-sizing: border-box;
+  }
+  .camera-panel .panel-heading { display: none; }
+  .camera-panel .mode-switch,
+  .camera-panel #cameraBtn { width: 100%; box-sizing: border-box; }
+  body.playing .camera-panel .camera-view { display: block; width: 100%; height: 62px; }
+  body.playing .camera-panel .camera-view video,
+  body.playing .camera-panel .camera-view canvas { width: 100%; height: 100%; object-fit: cover; }
+  .ground-warning { top: 78px; left: 12px; }
+  .chase { top: 76px; left: 50%; right: auto; transform: translateX(-50%); }
+  .combo { top: 138px; right: 12px; }
+  .radio { top: 142px; right: 12px; max-width: 55%; }
+}
+
+/* 右上角体感卡片压住血量：390x844 实测
+     .health-chip  右边缘 261px
+     .camera-panel 左边缘 246px   → 横向压住 15px（两者都在 y≈195 同一行）
+   HUD 原本让位 118px 不够，提到 156px：血量右边缘变成 223px，留出 23px 间隙。
+   放在文件最末，避免被前面同优先级的规则按顺序盖掉。 */
+@media (max-width: 760px) {
+  .in-game-hud,
+  body.playing .in-game-hud {
+    right: 156px;
+  }
+}

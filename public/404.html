@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>404 · 这片云没了</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(#3f92d8, #cfeafa);
+        font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+        color: #12303f;
+        padding: 24px;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.88);
+        border-radius: 24px;
+        padding: 40px clamp(24px, 6vw, 56px);
+        text-align: center;
+        box-shadow: 0 24px 60px rgba(11, 58, 84, 0.28);
+        max-width: 420px;
+      }
+      .mark { font-size: 56px; line-height: 1; }
+      h1 { margin: 12px 0 8px; font-size: 22px; }
+      p { margin: 0 0 24px; color: #40606f; line-height: 1.7; }
+      a {
+        display: inline-block;
+        background: #ffd23f;
+        color: #3a2a00;
+        text-decoration: none;
+        font-weight: 700;
+        padding: 14px 28px;
+        border-radius: 999px;
+        box-shadow: 0 6px 0 #e0a800;
+      }
+      a:active { transform: translateY(3px); box-shadow: 0 3px 0 #e0a800; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="mark">🐲</div>
+      <h1>404 · 飞过头了</h1>
+      <p>这条航线上没有云。回跑道重新起飞吧。</p>
+      <a href="./">返回起飞区</a>
+    </div>
+  </body>
+</html>

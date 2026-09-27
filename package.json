@@ -1,0 +1,26 @@
+{
+  "name": "nailong-jet-flight",
+  "version": "1.0.0",
+  "private": true,
+  "description": "奶龙 · 3D 喷射起飞计划 — WebGL 喷射飞行游戏",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node preview.cjs",
+    "build": "node scripts/build.mjs",
+    "start": "node server.mjs",
+    "serve": "node server.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "vendor:mediapipe": "node scripts/vendor-mediapipe.mjs",
+    "verify": "node scripts/verify.mjs",
+    "package": "node scripts/package.mjs",
+    "release": "node scripts/build.mjs && node scripts/package.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "clean-css": "^5.3.3",
+    "playwright-core": "^1.63.0",
+    "terser": "^5.51.2"
+  }
+}

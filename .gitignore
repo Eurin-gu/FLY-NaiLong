@@ -1,0 +1,21 @@
+.playwright-cli/
+node_modules/
+
+.sites-publish/
+
+# Build output — rebuilt from source by CI (see .github/workflows/deploy-pages.yml)
+dist/
+
+# Deploy bundles
+nailong-site.zip
+
+# Local build / verification scratch space
+.npm-cache/
+.pw-browsers/
+.tmp-*/
+output/verify/*
+!output/verify/.gitkeep
+*.log
+
+# Dev screenshots (keep the verify scripts in output/playwright)
+output/**/*.png
