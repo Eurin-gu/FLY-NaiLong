@@ -2974,3 +2974,29 @@ dialog li {
     animation: none;
   }
 }
+
+/* 手机端准备界面：control-panel / skill-panel / route / tips 都被
+   display:none（截图实测 doc=844 且不滚动），标题文案又刚被删掉，
+   于是游戏画面下方留了 249px 空白。把准备态的游戏画面拉满整屏。
+   只在非 playing 状态生效，不影响 body.playing .stage 的 100dvh。 */
+@media (max-width: 760px) {
+  body:not(.playing) .stage {
+    height: calc(100dvh - 84px);
+  }
+}
+
+/* 顶部三行宣传文案已移除（和游戏内飞行指南重复），
+   .intro 里现在只剩「最高飞行纪录」，把留白收紧。 */
+.intro,
+body.playing .intro {
+  min-height: 0;
+  padding: 10px 2px 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+@media (max-width: 760px) {
+  .intro,
+  body.playing .intro {
+    padding: 8px 2px 6px;
+  }
+}
