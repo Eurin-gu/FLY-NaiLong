@@ -1,6 +1,52 @@
 # 奶龙 · 3D 喷射起飞计划
 
+![奶龙 · 3D 喷射起飞计划](docs/images/hero.png)
+
 真实 WebGL / Three.js 飞行场景。角色是程序搭建的奶龙造型：黄色圆肚子、绿色眼睛、奶油色肚皮、小爪子和尾巴。底下可喷便便、水柱或彩虹。保留了追捕吐槽、穿圈计分和搞笑结算。
+
+## 亮点
+
+**画面**
+
+- 奶龙模型与全场道具**完全由基础几何体程序生成**，没有使用任何外部 3D 模型资产
+- 真实 3D 空域：随高度变化的天空与雾、程序化城市、云层、甜甜圈光环、巡逻无人机、飞鸟
+- 三种喷射物（便便 / 水柱 / 彩虹），带尾流、重力下坠与各自音效
+
+**手感**
+
+- 真自由落体：v = v₀ + g·t，重力 58.86 m/s²，**没有终端速度** —— 掉得越久越快
+- 只有扇翅才产生升力，松手立刻下坠；按 S / ↓ 进一步加大重力俯冲
+
+**血量制度与交警**
+
+- 每局 3 点生命，被抓或被撞扣 1 点，归零即结束
+- **地面和楼房都是陷阱**：撞地 → 3 秒触地警告 → 交警起飞追捕 → **全场闪红灯**；爬升到 25 m 或用技能冲刺可以甩掉，被抓扣血
+- 撞楼直接被抓；撞到巡逻无人机扣血；撞到飞鸟只扣分、不扣血
+- 四个技能：清场 / 无敌冲刺 / 护盾 / 打滚，各有冷却与免疫判定
+
+**体感操作**（摄像头，画面仅在浏览器本地识别，不会上传）
+
+- 双臂连续上下扇动 = 爬升；身体左右倾斜 = 转向
+- **三个技能手势**：双手交叉 → 脸皮护盾、单臂高举（奥特曼那种）→ 奶龙打滚、双臂向两侧张开 → 全场洗礼
+- MediaPipe Pose **自托管**在 vendor/mediapipe/，不依赖第三方 CDN，可以离线运行
+
+**工程化**
+
+- 构建：压缩 JS/CSS + 内容哈希 + SEO/OG 注入 + Service Worker 预缓存清单
+- PWA：可安装到桌面，**断网也能玩**
+- 安全：严格 CSP、nosniff、Referrer-Policy、Permissions-Policy
+- 生产服务器**零第三方依赖**：brotli 压缩、强缓存、条件请求（304）、路径穿越防护、/healthz 健康检查
+- **53 项真实浏览器自检**（npm run verify）：落体物理、交警追捕、PWA 离线重载、控制台无异常
+
+## 在线试玩
+
+**👉 https://eurin-gu.github.io/FLY-NaiLong/**
+
+手机浏览器直接打开就能玩，竖屏已适配。这个地址是 HTTPS，所以**体感摄像头模式也能用**。
+
+📊 项目介绍 PPT：[奶龙喷射起飞计划.pptx（176 MB）](https://github.com/Eurin-gu/FLY-NaiLong/releases/latest/download/nailong-jet-flight-presentation.pptx)
+
+> 超过 GitHub 单文件 100 MB 的限制，所以放在 Releases 里（从仓库首页右侧 Releases 也能进）。
 
 ## 运行
 
@@ -22,9 +68,19 @@ npm start            # → http://127.0.0.1:8080（读取 dist/）
 
 体感模式需要 localhost / HTTPS。人体姿态识别组件（MediaPipe Pose）已自托管在 `vendor/mediapipe/`（约 24 MB，仅在点击“开启体感”时按需加载）；该目录缺失时会自动回退到 jsDelivr CDN。视频仅在浏览器本地识别，不上传。切回手动模式会释放摄像头。
 
-## 部署上线
+## 部署
 
-见 [DEPLOY.md](DEPLOY.md)：Cloudflare Pages / Netlify / Vercel / GitHub Pages / Docker & 自有服务器 五种方案，含一键上传步骤、自定义域名与上线检查清单。
+线上跑在 **GitHub Pages**：推送到 `main` 就会自动构建并发布（[.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)）。
+
+```
+改源码 → npm run release（本地构建 + 自检）→ git push → 自动上线
+```
+
+`dist/` 不入库，由 CI 从源码重建。
+
+> ⚠️ GitHub Pages **不支持自定义响应头**，所以 `_headers` 里那套严格 CSP 在这个地址上不生效（HTTPS、缓存、PWA 离线都正常）。需要严格安全头就用 Cloudflare Pages / Netlify / 自有服务器。
+
+其他方案见 [DEPLOY.md](DEPLOY.md)：Cloudflare Pages / Netlify / Vercel / Docker & 自有服务器，含一键上传步骤、自定义域名与上线检查清单。
 
 最短路径：`npm run build`，然后把 `dist/` 文件夹拖到 <https://app.netlify.com/drop> 或 Cloudflare Pages 的 **Upload assets**，几十秒后就能拿到公网 HTTPS 地址。
 
