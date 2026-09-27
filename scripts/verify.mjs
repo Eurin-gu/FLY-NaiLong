@@ -449,7 +449,9 @@ async function checkBrowser() {
   const poseVersion = JSON.parse(
     fs.readFileSync(path.resolve("site.config.json"), "utf8"),
   ).mediapipeVersion;
-  const poseResult = await page.evaluate(async (version) => {
+  // 实测这条偶发失败（同一个 CSP、同一个 SW 状态下单测都通过），
+  // 大概是整套跑完之后的资源压力导致，重试两次避免假警报。
+  const runPoseCheck = () => page.evaluate(async (version) => {
     const base = new URL(`vendor/mediapipe/${version}/`, location.href).href;
     try {
       if (!window.Pose) {
@@ -484,6 +486,11 @@ async function checkBrowser() {
       return "error: " + (error && error.message);
     }
   }, poseVersion);
+  let poseResult = "not attempted";
+  for (let attempt = 0; attempt < 3 && poseResult !== "ok"; attempt += 1) {
+    if (attempt) await page.waitForTimeout(1500);
+    poseResult = await runPoseCheck();
+  }
   record("MediaPipe pose runtime runs under the CSP", poseResult === "ok", poseResult);
 
   section("Console hygiene");

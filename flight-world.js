@@ -107,6 +107,8 @@ class FlightWorld {
     this.emitDebt = 0;
     this.camReady = false;
     this.cameraMode = "";
+    // 0 = 面向镜头（开局待机），1 = 背对镜头向前飞；开局后平滑过渡
+    this.turn = 0;
     this.cityCell = "";
     this.cloudCell = "";
     this.pulse = new T.Mesh(
@@ -807,10 +809,21 @@ class FlightWorld {
     );
     const rollAngle =
       s.roll > 0 && !this.reducedMotion ? Math.PI * 2 * (1 - s.roll / 0.85) : 0;
+    // 开局待机时面向镜头，点开始后丝滑转身背对镜头向前飞。
+    // 转身过程中朝向系数 facing 从 1 渐变到 -1：俯仰、侧倾、滚转、转头
+    // 都要乘上它，否则转过 180° 之后这些动作在世界坐标里会反掉。
+    const turnTarget = ready ? 0 : 1;
+    this.turn += (turnTarget - this.turn) * (1 - Math.exp(-visualDt * 2.4));
+    const turnEase = this.turn * this.turn * (3 - 2 * this.turn);
+    const facing = 1 - 2 * turnEase;
+    const yaw = -0.3 + (Math.PI + 0.3) * turnEase;
+    const steerYaw =
+      Math.max(-0.65, Math.min(0.65, s.vx * 0.012)) * facing;
+    const bank = Math.max(-0.5, Math.min(0.5, s.vx * 0.009)) * facing;
     this.hero.rotation.set(
-      -s.vy * 0.002,
-      ready ? -0.3 : -0.2 + Math.max(-0.65, Math.min(0.65, s.vx * 0.012)),
-      -Math.max(-0.5, Math.min(0.5, s.vx * 0.009)) + rollAngle,
+      -s.vy * 0.002 * facing,
+      yaw + steerYaw,
+      -bank + rollAngle * facing,
     );
     const pumping = s.thrust > 0 || ready;
     this.leftArm.rotation.z = pumping
@@ -829,7 +842,7 @@ class FlightWorld {
     this.head.rotation.z = Math.sin(s.time * 2) * 0.035;
     this.head.rotation.y = ready
       ? 0
-      : Math.max(-0.22, Math.min(0.22, s.vx * 0.004));
+      : Math.max(-0.22, Math.min(0.22, s.vx * 0.004)) * facing;
     this.leftArm.rotation.z -= Math.max(0, s.vx) * 0.007;
     this.rightArm.rotation.z -= Math.min(0, s.vx) * 0.007;
     this.tail.rotation.z = Math.sin(s.time * 7) * (pumping ? 0.22 : 0.08);

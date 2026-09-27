@@ -169,6 +169,46 @@
       } catch {}
     }
   }
+  // ---- 新手教程：只给第一次进游戏的人看，跟着动作自动推进 ----
+  const TUTORIAL_KEY = "nailong-tutorial-done";
+  let tutorialSeen = false;
+  try {
+    tutorialSeen = localStorage.getItem(TUTORIAL_KEY) === "1";
+  } catch {}
+  let tutorialStep = -1;
+  const tutorialSteps = [
+    { text: "按住 空格 / 按住屏幕 —— 扇翅往上飞", done: () => s.altitude > 40 },
+    { text: "左右拖动画面 —— 控制飞行方向", done: () => Math.abs(s.x) > 12 },
+    { text: "穿过金色甜甜圈 —— 加分，撞到东西会掉血", done: () => s.score > 0 },
+  ];
+  function endTutorial() {
+    tutorialSeen = true;
+    tutorialStep = -1;
+    $("tutorial").hidden = true;
+    try {
+      localStorage.setItem(TUTORIAL_KEY, "1");
+    } catch {}
+  }
+  function startTutorial() {
+    if (tutorialSeen) return;
+    tutorialStep = 0;
+    $("tutorialStep").textContent = "1";
+    $("tutorialText").textContent = tutorialSteps[0].text;
+    $("tutorial").hidden = false;
+  }
+  function updateTutorial() {
+    if (tutorialStep < 0 || s.mode !== "running") return;
+    if (!tutorialSteps[tutorialStep].done()) return;
+    tutorialStep += 1;
+    if (tutorialStep >= tutorialSteps.length) {
+      endTutorial();
+      toast("教程结束 —— 剩下的自己浪吧！");
+      return;
+    }
+    $("tutorialStep").textContent = String(tutorialStep + 1);
+    $("tutorialText").textContent = tutorialSteps[tutorialStep].text;
+    beep(560);
+  }
   function clearInput() {
     keys.clear();
     touch.clear();
@@ -256,6 +296,7 @@
     $("rollBtn").querySelector(".skill-key").textContent =
       rollLeft > 0 ? Math.ceil(rollLeft) + "s" : "E";
     $("rollBtn").style.setProperty("--cd", String(rollLeft / 4));
+    updateTutorial();
     $("stage").classList.toggle("boosting", s.mode === "running" && s.dash > 0);
     $("stage").classList.toggle(
       "celebrating",
@@ -309,6 +350,7 @@
     document.body.classList.add("playing");
     $("startBtn").blur();
     toast("开局保护 10 秒！先练习扇翅，保护结束后触地有 3 秒警告。");
+    startTutorial();
     hud();
     beep(300);
   }
@@ -841,6 +883,7 @@
   });
   $("restartBtn").addEventListener("click", start);
   $("rollBtn").addEventListener("click", barrelRoll);
+  $("tutorialSkip").addEventListener("click", endTutorial);
   $("pauseBtn").addEventListener("click", pause);
   skillButtons.forEach((b, i) =>
     b.addEventListener("click", () => useSkill(i)),

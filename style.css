@@ -2898,3 +2898,76 @@ dialog li {
     opacity: 0.5;
   }
 }
+
+/* ---- 新手教程提示条 ---- */
+.tutorial {
+  position: absolute;
+  top: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: min(86%, 460px);
+  padding: 9px 11px 9px 10px;
+  border-radius: 13px;
+  background: rgba(255, 253, 245, 0.96);
+  border: 1px solid #e2e6d6;
+  box-shadow: 0 8px 22px rgba(24, 40, 60, 0.22);
+  color: #4d5f45;
+  font-size: 12px;
+  z-index: 7;
+  pointer-events: none;
+  animation: tutorialIn 0.28s ease-out;
+}
+.tutorial[hidden] {
+  display: none;
+}
+.tutorial b {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #ffd23f;
+  color: #4a3700;
+  font-size: 12px;
+  font-weight: 800;
+}
+.tutorial span {
+  flex: 1 1 auto;
+  line-height: 1.35;
+}
+.tutorial button {
+  flex: 0 0 auto;
+  pointer-events: auto;
+  font: inherit;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #dfe3d3;
+  background: #fbfbf4;
+  color: #7c8770;
+  cursor: pointer;
+}
+@keyframes tutorialIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px);
+  }
+}
+@media (max-width: 760px) {
+  .tutorial {
+    /* 让开顶部的血量/分数、体感胶囊和追捕横幅 */
+    top: 134px;
+    max-width: calc(100% - 20px);
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tutorial {
+    animation: none;
+  }
+}
