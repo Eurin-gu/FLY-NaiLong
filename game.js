@@ -36,6 +36,7 @@
     altitudeBadge: 0,
     cooldown: [0, 0, 0],
     combo: 0,
+    rings: 0,
     best: 0,
     muted: true,
     pointer: false,
@@ -243,6 +244,8 @@
       );
   }
   function hud() {
+    $("missionText").textContent = s.rings >= 3 ? `目标达成！已穿 ${s.rings} 环` : `穿过光环 ${s.rings} / 3`;
+    $("flightMission").classList.toggle("complete", s.rings >= 3);
     const altitude = Math.floor(s.altitude);
     $("altitudeText").innerHTML =
       `${altitude.toLocaleString()}<small>m</small>`;
@@ -315,6 +318,8 @@
     objects = [];
     Object.assign(s, {
       mode: "running",
+      menuPreview: false,
+      rings: 0,
       peak: 18,
       x: 0,
       altitude: 18,
@@ -352,6 +357,8 @@
     $("pauseBtn").textContent = "Ⅱ";
     $("pauseBtn").setAttribute("aria-label", "暂停游戏");
     document.body.classList.add("playing");
+    document.body.dataset.screen = "playing";
+    $("flightMission").hidden = false;
     document.body.classList.remove("preflight");
     document.body.classList.remove("choosing-mode");
     $("startBtn").blur();
@@ -365,6 +372,7 @@
   // 开局分两步：先「开始游戏」，再选飞行方式，最后「一键起飞」。
   // 结算 / 暂停复用同一个浮层，所以 overlay() 会把模式选择收起来。
   let overlayStep = "intro";
+  document.body.dataset.screen = "intro";
   document.body.classList.add("preflight");
   let setupControl = matchMedia("(max-width: 760px)").matches ? "camera" : "manual";
   let poseReady = false;
@@ -376,6 +384,10 @@
       : (matchMedia("(max-width: 760px)").matches ? "按住画面上升，左右拖动转向。" : "按空格反复扇翅，A / D 转向。按下更快地升高。")
   }
   function showModeStep() {
+    s.menuPreview = true;
+    document.body.dataset.screen = "setup";
+    $("setupBack").hidden = false;
+    $("resultStats").hidden = true;
     overlayStep = "modes";
     s.flight = null;
     document.body.classList.add("choosing-mode");
@@ -395,6 +407,12 @@
     beep(660);
   }
   function overlay(tag, title, description, label) {
+    clearTimeout(toastTimer);
+    $("toast").classList.remove("show");
+    document.body.dataset.screen = s.mode === "paused" ? "paused" : "result";
+    $("setupBack").hidden = true;
+    $("resultStats").hidden = true;
+    $("flightMission").hidden = true;
     overlayStep = "done";
     document.body.classList.remove("choosing-mode");
     document.body.classList.remove("preflight");
@@ -423,6 +441,8 @@
       $("pauseBtn").textContent = "▷";
       $("pauseBtn").setAttribute("aria-label", "继续游戏");
     } else if (s.mode === "paused") {
+      document.body.dataset.screen = "playing";
+      $("flightMission").hidden = false;
       s.mode = "running";
       $("gameOverlay").hidden = true;
       $("pauseBtn").textContent = "Ⅱ";
@@ -444,6 +464,9 @@
       "再喷一趟",
     );
     if (win) s.chase = null;
+    $("overlayDescription").textContent = win ? "这回，天空记住你了。" : "人被抓了，纪录留下了。";
+    $("resultStats").innerHTML = `<div><strong>${s.score}</strong><span>本局得分</span></div><div><strong>${Math.floor(s.peak)}<small>m</small></strong><span>最高飞行</span></div><div><strong>${s.rings}</strong><span>穿过光环</span></div>`;
+    $("resultStats").hidden = false;
     s.groundTime = 0;
     $("chase").hidden = true;
     $("groundWarning").hidden = true;
@@ -687,7 +710,7 @@
     nextGate = s.distance + 230;
   }
   function update(dt) {
-    if (s.mode === "ready") {
+    if (s.mode === "ready" || s.menuPreview) {
       s.time += dt;
       return;
     }
@@ -783,11 +806,13 @@
       if (o.type === "ring" && crossing) {
         if (Math.hypot(crossX - o.x, crossY - o.y) < 7.2) {
           s.combo++;
+          s.rings++;
           s.celebration = 0.7;
           s.score += 100 + Math.min(s.combo - 1, 6) * 20;
+          if (s.rings === 3) s.score += 300;
           world.burst(o.x, o.y, 0, "rainbow", 30);
           toast(
-            s.combo > 1
+            s.rings === 3 ? "三环达成！额外 +300 分，奶龙申请加餐！" : s.combo > 1
               ? `光环连穿 ×${s.combo}！+${100 + Math.min(s.combo-1,6)*20} 分！`
               : "穿过光环 +100！奶龙：这圈怎么不能吃？",
           );
@@ -920,6 +945,32 @@
   requestAnimationFrame(loop);
   hud();
   let launching = false;
+  let greetingIndex = 0;
+  $("dragonHello").addEventListener("click", () => {
+    s.greetUntil = s.time + 1.8;
+    const lines = ["先说好，别问动力来源。", "看我这身材，续航能差吗？", "翅膀你来扇，风头我来出。", "交警叔叔今天应该休息吧？"];
+    $("dragonSpeech").textContent = lines[greetingIndex++ % lines.length];
+    beep(520);
+  });
+  $("setupBack").addEventListener("click", () => {
+    stopCamera();
+    overlayStep = "intro";
+    s.mode = "ready";
+    s.menuPreview = false;
+    s.x = 0;
+    s.altitude = 18;
+    s.vy = 0;
+    s.vx = 0;
+    document.body.dataset.screen = "intro";
+    document.body.classList.remove("choosing-mode");
+    $("overlayModes").hidden = true;
+    $("setupBack").hidden = true;
+    $("overlayTag").textContent = "今日宜：一飞冲天";
+    $("overlayTitle").innerHTML = "小翅膀，<br />大动静。";
+    $("overlayDescription").innerHTML = "你负责扇，我负责飞。<br />至于怎么飞的……别问。";
+    $("startBtn").disabled = false;
+    $("startBtn").innerHTML = "开始游戏 <span aria-hidden=\"true\">↗</span>";
+  });
   $("startBtn").addEventListener("click", async () => {
     if (s.mode === "paused") {
       pause();

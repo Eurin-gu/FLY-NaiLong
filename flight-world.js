@@ -287,7 +287,7 @@ class FlightWorld {
     smile.visible = false;
     head.add(smile);
     // The broad, open smile is a stronger match for the supplied character references.
-    this.ball(head, "#351d20", 0, -0.39, 1.39, 0.48, 0.24, 0.065);
+    this.mouth = this.ball(head, "#351d20", 0, -0.39, 1.39, 0.48, 0.24, 0.065);
     this.ball(head, "#e98779", 0, -0.48, 1.455, 0.27, 0.08, 0.025);
     this.tail = this.ball(g, "#f4c42b", 0, -1.1, -1.65, 0.58, 0.5, 1.12);
     this.tail.rotation.x = -0.3;
@@ -753,7 +753,7 @@ class FlightWorld {
   }
   render(s, dt, objects) {
     const T = THREE;
-    const ready = s.mode === "ready",
+    const ready = s.mode === "ready" || s.menuPreview,
       active = s.mode === "running" || ready;
     const visualDt = active ? dt : 0;
     this.frameSpeed = ready ? 0 : s.speed;
@@ -800,7 +800,7 @@ class FlightWorld {
     this.scene.background.copy(sky);
     this.scene.fog.color.copy(sky);
     this.hero.position.set(s.x, s.altitude + Math.sin(s.time * 2.5) * 0.12, 0);
-    const modelScale = ready ? (this.width < 500 ? 1.08 : 1.5) : 1;
+    const modelScale = ready ? (this.width < 761 ? 1.3 : 1.7) : 1;
     const stretch = !this.reducedMotion && s.dash > 0 ? 0.06 : 0;
     this.hero.scale.set(
       modelScale * (1 - stretch),
@@ -816,7 +816,7 @@ class FlightWorld {
     this.turn += (turnTarget - this.turn) * (1 - Math.exp(-visualDt * 2.4));
     const turnEase = this.turn * this.turn * (3 - 2 * this.turn);
     const facing = 1 - 2 * turnEase;
-    const yaw = -0.3 + (Math.PI + 0.3) * turnEase;
+    const yaw = Math.PI * turnEase;
     const steerYaw =
       Math.max(-0.65, Math.min(0.65, s.vx * 0.012)) * facing;
     const bank = Math.max(-0.5, Math.min(0.5, s.vx * 0.009)) * facing;
@@ -825,7 +825,7 @@ class FlightWorld {
       yaw + steerYaw,
       -bank + rollAngle * facing,
     );
-    const pumping = s.thrust > 0 || ready;
+    const pumping = s.thrust > 0 && !ready;
     this.leftArm.rotation.z = pumping
       ? -0.65 + Math.sin(s.time * 10) * 0.13
       : -0.1;
@@ -840,6 +840,13 @@ class FlightWorld {
         side * (pumping ? 0.15 + Math.cos(s.time * 14) * 0.25 : -0.25);
     });
     this.head.rotation.z = Math.sin(s.time * 2) * 0.035;
+    if (ready && !this.reducedMotion) {
+      const greeting = s.time % 8 < 2.6 || s.time < (s.greetUntil || 0);
+      this.rightArm.rotation.z = greeting ? 2.25 + Math.sin(s.time * 12) * 0.26 : 0.15;
+      this.leftArm.rotation.z = -0.15 - Math.sin(s.time * 2) * 0.08;
+      this.head.rotation.z = Math.sin(s.time * 1.6) * (greeting ? 0.07 : 0.025);
+      this.mouth.scale.y = greeting ? 0.27 + Math.sin(s.time * 5) * 0.04 : 0.17;
+    } else this.mouth.scale.y = 0.24;
     this.head.rotation.y = ready
       ? 0
       : Math.max(-0.22, Math.min(0.22, s.vx * 0.004)) * facing;
@@ -847,7 +854,7 @@ class FlightWorld {
     this.rightArm.rotation.z -= Math.min(0, s.vx) * 0.007;
     this.tail.rotation.z = Math.sin(s.time * 7) * (pumping ? 0.22 : 0.08);
     const blink = s.time % 4.7 < 0.13 ? 0.12 : 1;
-    this.eyes.forEach((m) => (m.scale.y = m.userData.openScaleY * blink));
+    this.eyes.forEach((m, i) => (m.scale.y = m.userData.openScaleY * (ready && s.time < (s.greetUntil || 0) && i < 4 ? 0.12 : blink)));
     this.bubble.position.copy(this.hero.position);
     this.bubble.visible = s.shield > 0 || s.dash > 0;
     this.bubble.material.opacity = s.dash > 0 ? 0.12 : 0.22;
@@ -952,8 +959,8 @@ class FlightWorld {
     this.pulse.scale.setScalar(1 + (1 - this.pulseTime / 0.65) * 65);
     this.pulse.material.opacity = this.pulseTime * 0.6;
     const targetPosition = new T.Vector3(
-      s.x + (ready ? 10 : chase ? 10 : 4.5),
-      s.altitude + (ready ? 6 : chase ? 8 : 6 - s.vy * 0.015),
+      s.x + (ready ? 0 : chase ? 10 : 4.5),
+      s.altitude + (ready ? 2 : chase ? 8 : 6 - s.vy * 0.015),
       ready ? 24 : chase ? 29 : s.dash > 0 ? 29 : 22,
     );
     if (!this.camReady || (this.cameraMode !== s.mode && ready)) {
@@ -966,8 +973,8 @@ class FlightWorld {
       );
     this.cameraMode = s.mode;
     this.target.set(
-      s.x + (ready ? (this.width < 500 ? -6 : -5) : 0),
-      s.altitude + (ready ? 0 : 2),
+      s.x + (ready ? (this.width < 761 ? 0 : -5.4) : 0),
+      s.altitude + (ready ? (this.width < 761 ? -4.8 : 1) : 2),
       ready ? 0 : chase ? 5 : -27,
     );
     this.camera.lookAt(this.target);

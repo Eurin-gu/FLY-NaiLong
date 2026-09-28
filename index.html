@@ -120,10 +120,10 @@
                     <small>最高飞行纪录</small>
                     <strong id="bestText">0 <em>m</em></strong>
                   </div>
-                  <div class="flight-tag" id="overlayTag">01 / 准备起飞</div>
-                  <h2 id="overlayTitle">奶龙，<br />起飞。</h2>
+                  <div class="flight-tag" id="overlayTag">今日宜：一飞冲天</div>
+                  <h2 id="overlayTitle">小翅膀，<br />大动静。</h2>
                   <p id="overlayDescription">
-                    扇翅上升，停下就坠。<br />别让交警追上。
+                    你负责扇，我负责飞。<br />至于怎么飞的……别问。
                   </p>
                   <div class="overlay-modes" id="overlayModes" hidden>
                     <div class="mode-switch" role="group" aria-label="选择飞行方式">
@@ -148,10 +148,14 @@
                   <button class="start-button" id="startBtn">
                     开始游戏 <span aria-hidden="true">↗</span>
                   </button>
+                  <button class="back-button" id="setupBack" type="button" hidden>← 返回首页</button>
+                  <div class="lobby-challenge"><span>第一份飞行小目标</span><strong>穿过 3 个光环</strong><small>达成额外 +300 分 · 躲开飞鸟和交警。</small></div>
+                  <div class="result-stats" id="resultStats" hidden></div>
                   <div class="start-tip" id="startTip">
                     <kbd>SPACE</kbd> 扇翅 <kbd>A D</kbd> 转向
                   </div>
                 </div>
+                <button class="dragon-hello" id="dragonHello" type="button" aria-label="和奶龙打个招呼"><span id="dragonSpeech">准备好了？本龙要起飞了。</span><small>戳我一下 ↗</small></button>
                 <aside class="gesture-guide" id="gestureGuide" aria-label="飞行手势新手引导">
                   <div class="guide-heading"><span>体感飞行 · 跟着火柴人做</span><b id="guideStatus">HOW TO FLY</b></div>
                   <div class="guide-demo" id="guideDemo" data-demo="flap">
@@ -174,6 +178,7 @@
                   <div class="setup-camera-view" id="setupCameraView" hidden><video id="setupCameraPreview" autoplay muted playsinline></video><span id="setupCameraFeedback">让肩膀和双手入镜</span></div>
                 </aside>
               </div>
+              <div class="flight-mission" id="flightMission" hidden><span>今日小目标</span><strong id="missionText">穿过光环 0 / 3</strong></div>
               <div
                 class="toast"
                 id="toast"

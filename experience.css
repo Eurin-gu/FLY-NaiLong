@@ -308,3 +308,68 @@ body.preflight .gesture-guide { display: block; }
   .overlay-modes .mode-switch button { min-height: 52px; }
   .overlay h2 { font-size: 32px; }
 }
+
+/* Character-led lobby, flight preparation, and a compact score ticket. */
+body[data-screen="intro"] .gesture-guide { display: none !important; }
+body[data-screen="intro"] .overlay { background: linear-gradient(90deg, #f6f1dfe8, #f6f1df77 40%, transparent 68%); }
+body[data-screen="intro"] .overlay-content { width: 43%; }
+body[data-screen="intro"] .overlay h2 { font-size: clamp(58px, 6.5vw, 94px); font-weight: 950; line-height: .99; letter-spacing: -.07em; }
+body[data-screen="intro"] .overlay h2::first-line { color: #314539; }
+.lobby-challenge { margin-top: 28px; border-top: 1px solid #bfcaba; padding-top: 16px; display: grid; gap: 5px; }
+.lobby-challenge > span { font-size: 10px; color: #8b7352; letter-spacing: .12em; }
+.lobby-challenge strong { font-size: 20px; color: #314539; }
+.lobby-challenge small { color: #637365; font-size: 11px; }
+body:not([data-screen="intro"]) .lobby-challenge, body:not([data-screen="intro"]) .dragon-hello { display: none; }
+.dragon-hello { position: absolute; left: 58%; top: 15%; max-width: 280px; padding: 16px 20px; border: 2px solid #354838; border-radius: 20px 20px 20px 4px; background: #fffbed; color: #354838; transform: rotate(-3deg); box-shadow: 4px 5px 0 #354838; cursor: pointer; text-align: left; z-index: 3; }
+.dragon-hello span { display: block; font-size: 15px; font-weight: 800; }
+.dragon-hello small { display: block; margin-top: 7px; font-size: 10px; color: #9e714c; }
+.dragon-hello:hover { transform: rotate(0) translateY(-3px); }
+.back-button { display: block; background: none; border: 0; color: #586e60; font-size: 12px; padding: 14px 0 0; cursor: pointer; }
+.back-button[hidden], .result-stats[hidden], .flight-mission[hidden] { display: none; }
+body[data-screen="setup"] .overlay-content .personal-best { display: none; }
+body[data-screen="setup"] .overlay-mode-note { margin-bottom: 5px; }
+body[data-screen="setup"] .overlay h2 { font-size: clamp(34px, 4vw, 54px); }
+body[data-screen="setup"] .overlay-modes .mode-switch button { min-height: 76px; border-radius: 10px; }
+body[data-screen="setup"] .overlay-modes .mode-switch button.selected { box-shadow: 3px 3px 0 #eac6a0; }
+body[data-screen="result"] .overlay, body[data-screen="paused"] .overlay { justify-content: center; background: #243d38a6; backdrop-filter: blur(9px); }
+body[data-screen="result"] .overlay-content, body[data-screen="paused"] .overlay-content { width: min(480px, 90%); padding: 36px; border-radius: 20px; background: #fff9e9; transform: rotate(-1deg); box-shadow: 9px 9px 0 #1d332c77; }
+body[data-screen="result"] .personal-best, body[data-screen="paused"] .personal-best, body[data-screen="result"] .start-tip { display: none; }
+body[data-screen="result"] .overlay h2 { font-size: clamp(36px, 5vw, 58px); }
+.result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 27px; padding-top: 20px; border-top: 1px dashed #c6c7ac; text-align: center; }
+.result-stats strong { display: block; font-size: 27px; color: #304738; }
+.result-stats strong small { font-size: 11px; }
+.result-stats span { display: block; margin-top: 6px; font-size: 11px; color: #87907b; }
+.flight-mission { position: absolute; z-index: 3; top: 82px; left: 22px; background: #fff8dce8; border-left: 3px solid #ed9761; border-radius: 0 10px 10px 0; padding: 8px 12px; pointer-events: none; }
+.flight-mission span { display: block; font-size: 9px; color: #917b58; }
+.flight-mission strong { display: block; font-size: 12px; margin-top: 3px; color: #344d3d; }
+.flight-mission.complete { border-color: #70a576; background: #edf7dce8; }
+@media (max-width: 760px) {
+  body[data-screen="intro"] .overlay { background: linear-gradient(0deg, #f5f0d9 0%, #f5f0d900 73%); }
+  body[data-screen="intro"] .overlay-content { width: 100%; padding: 18px 20px; border: 0; background: #fff9e9f2; box-shadow: 0 8px 30px #263d2e1a; }
+  body[data-screen="intro"] .overlay h2 { font-size: 45px; }
+  body[data-screen="intro"] .overlay h2 br { display: none; }
+  body[data-screen="intro"] .overlay p { margin-bottom: 15px; }
+  body[data-screen="intro"] .personal-best { margin-bottom: 9px; }
+  body[data-screen="intro"] .lobby-challenge { margin-top: 16px; padding-top: 11px; grid-template-columns: 1fr auto; align-items: center; }
+  .lobby-challenge strong { font-size: 14px; }
+  .lobby-challenge small { grid-column: 1 / -1; font-size: 10px; }
+  .dragon-hello { left: auto; right: 18px; top: calc(22px + env(safe-area-inset-top)); max-width: 245px; padding: 12px 15px; }
+  .dragon-hello span { font-size: 13px; }
+  body[data-screen="setup"] .overlay h2 { font-size: 30px; }
+  body[data-screen="setup"] .overlay-modes .mode-switch button { min-height: 55px; }
+  body[data-screen="setup"] .overlay-content { padding: 18px; }
+  body[data-screen="result"] .overlay, body[data-screen="paused"] .overlay { align-items: center; }
+  body[data-screen="result"] .overlay-content, body[data-screen="paused"] .overlay-content { width: 100%; padding: 27px 20px; }
+  .flight-mission { top: auto; bottom: 91px; left: 12px; padding: 6px 9px; }
+  .flight-mission strong { font-size: 10px; }
+}
+@media (max-width: 760px) and (max-height: 720px) {
+  body[data-screen="intro"] .overlay h2 { font-size: 36px; }
+  body[data-screen="intro"] .overlay-content { padding: 14px 18px; }
+  body[data-screen="intro"] .lobby-challenge { margin-top: 11px; padding-top: 8px; }
+  body[data-screen="setup"] .overlay-content { padding: 14px 17px; }
+  body[data-screen="setup"] .overlay-modes .mode-switch button { min-height: 49px; }
+}
+body[data-screen="result"] .overlay-content { display: flex; flex-direction: column; }
+body[data-screen="result"] .result-stats { order: 1; margin-top: 3px; }
+body[data-screen="result"] .start-button { order: 2; margin-top: 26px; }

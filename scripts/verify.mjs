@@ -180,6 +180,9 @@ async function checkBrowser() {
   );
 
   await page.screenshot({ path: path.join(SHOTS, "desktop-ready.png") });
+  await page.locator("#dragonHello").click();
+  record("dragon responds to greeting", (await page.locator("#dragonSpeech").textContent()).includes("动力"));
+  await page.locator("#startBtn").click();
   record("gesture guide is visible before flight", await page.locator("#gestureGuide").isVisible());
   await page.locator('[data-guide="steer"]').click();
   record("gesture guide explains steering", (await page.locator("#guideExplain").textContent()).includes("倾斜"));
@@ -190,7 +193,7 @@ async function checkBrowser() {
   let checkedPreflightCamera = false;
   const beginGame = async () => {
     const start = page.locator("#startBtn");
-    await start.click();
+    if (await page.locator("#overlayModes").isHidden()) await start.click();
     record("preflight offers camera mode", await page.locator("#setupCamera").isVisible());
     if (!checkedPreflightCamera) {
       checkedPreflightCamera = true;
