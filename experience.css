@@ -116,6 +116,67 @@ body.choosing-mode .overlay h2 { font-size: clamp(36px, 4.4vw, 58px); }
 body.choosing-mode .overlay #overlayDescription { margin-bottom: 16px; }
 body.choosing-mode .start-tip { display: none; }
 
+/* The setup lives inside the game scene, with a compact flight instructor on
+   the other side of the character instead of an empty desktop sidebar. */
+.overlay { justify-content: space-between; gap: 28px; }
+.overlay-content { position: relative; z-index: 2; }
+.gesture-guide {
+  display: none;
+  position: relative;
+  z-index: 2;
+  flex: 0 0 min(310px, 29vw);
+  padding: 17px;
+  border: 1px solid rgba(255,255,255,.82);
+  border-radius: 18px;
+  background: rgba(255,253,245,.86);
+  box-shadow: 0 16px 50px rgba(36,56,42,.12);
+  backdrop-filter: blur(16px);
+  color: var(--ink);
+}
+body.preflight .gesture-guide { display: block; }
+.guide-heading { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-size: 12px; font-weight: 800; }
+.guide-heading b { color: #9ca797; font-size: 9px; letter-spacing: .16em; }
+.guide-demo { position: relative; height: 195px; overflow: hidden; margin: 12px 0; border-radius: 13px; background: radial-gradient(circle at 50% 70%, #fff8d2 0, #e9f1e4 65%, #e1ece5 100%); }
+.stick-pilot { position: absolute; width: 174px; height: 190px; left: calc(50% - 87px); bottom: -16px; overflow: visible; filter: drop-shadow(0 5px 0 rgba(59,90,64,.12)); }
+.stick-pilot circle, .stick-pilot path { stroke: #304c43; stroke-width: 9; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.stick-pilot .stick-head { fill: #ffe3ae; }
+.stick-pilot .stick-arm circle { fill: #f37d53; stroke-width: 4; }
+.stick-arm { transform-box: fill-box; transform-origin: center top; }
+.guide-demo[data-demo="flap"] .stick-arm-left { animation: flap-left .7s ease-in-out infinite alternate; }
+.guide-demo[data-demo="flap"] .stick-arm-right { animation: flap-right .7s ease-in-out infinite alternate; }
+.guide-demo[data-demo="steer"] .stick-pilot { animation: pilot-steer 1.6s ease-in-out infinite alternate; }
+.guide-demo[data-demo="fall"] .stick-pilot { animation: pilot-fall 1.5s ease-in infinite; }
+.guide-airflow { position: absolute; left: 0; right: 0; bottom: 9px; color: #ee8758; letter-spacing: 25px; text-align: center; font-weight: 900; animation: airflow .7s ease-in-out infinite alternate; }
+.guide-demo[data-demo="steer"] .guide-airflow,
+.guide-demo[data-demo="fall"] .guide-airflow { display: none; }
+.guide-motion-lines { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 42px, rgba(255,255,255,.28) 43px 44px); }
+.guide-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
+.guide-steps button { display: grid; justify-items: start; gap: 2px; min-height: 46px; padding: 7px; border: 1px solid #e0e5d9; border-radius: 9px; background: #fffdf7; color: #5d7066; text-align: left; font-size: 10px; cursor: pointer; }
+.guide-steps button[aria-selected="true"] { border-color: #ef865f; background: #fff2df; color: #513e2e; }
+.guide-steps em { font-size: 9px; font-style: normal; font-weight: 800; color: #d46e49; }
+.gesture-guide .guide-explain { margin: 11px 0 0; min-height: 44px; font-size: 11px; line-height: 1.5; color: #536b61; }
+.setup-controls { display: grid; gap: 7px; margin-top: 5px; }
+.setup-controls > span { font-size: 12px; font-weight: 800; color: #354e43; }
+.setup-control-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.setup-control-switch button { min-height: 40px; border: 1px solid #d5dfd2; border-radius: 10px; background: #fffdf7; color: #597066; font-size: 12px; font-weight: 750; cursor: pointer; }
+.setup-control-switch button[aria-pressed="true"] { border-color: #e8754d; background: #fff1df; color: #483c2f; }
+.setup-controls small { min-height: 27px; font-size: 10px; line-height: 1.35; color: #728177; }
+.setup-camera-view { position: absolute; left: 17px; right: 17px; top: 45px; height: 195px; border-radius: 12px; overflow: hidden; background: #1d2927; }
+.setup-camera-view[hidden] { display: none; }
+.setup-camera-view video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.setup-camera-view span { position: absolute; left: 8px; right: 8px; bottom: 7px; padding: 4px; border-radius: 4px; background: rgba(19,29,26,.72); color: white; font-size: 10px; text-align: center; }
+@keyframes flap-left { from { transform: rotate(-28deg); } to { transform: rotate(24deg); } }
+@keyframes flap-right { from { transform: rotate(28deg); } to { transform: rotate(-24deg); } }
+@keyframes pilot-steer { from { transform: rotate(-19deg); } to { transform: rotate(19deg); } }
+@keyframes pilot-fall { from { transform: translateY(-22px); } to { transform: translateY(75px); } }
+@keyframes airflow { from { transform: translateY(5px); opacity: .45; } to { transform: translateY(-8px); opacity: 1; } }
+
+@media (max-width: 1050px) and (min-width: 761px) {
+  .overlay { padding: 28px; gap: 16px; }
+  .overlay-content { width: min(410px, 48%); }
+  .gesture-guide { flex-basis: 260px; padding: 12px; }
+}
+
 @media (max-width: 760px) {
   html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
   .app, main, .game-layout, .flight-panel { width: 100%; height: 100dvh; min-height: 0; margin: 0; padding: 0; }
@@ -132,6 +193,44 @@ body.choosing-mode .start-tip { display: none; }
     align-items: flex-end;
     padding: 0 14px max(20px, env(safe-area-inset-bottom));
     background: linear-gradient(180deg, transparent 29%, rgba(32,53,43,.07) 58%, rgba(32,53,43,.23) 100%);
+  }
+  body.preflight .gesture-guide { display: none; }
+  body.preflight.choosing-mode .gesture-guide {
+    display: block;
+    position: absolute;
+    top: calc(12px + env(safe-area-inset-top));
+    left: 14px;
+    right: 14px;
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+  .guide-heading { font-size: 10px; }
+  .guide-heading b { font-size: 8px; }
+  .guide-demo { float: left; width: 92px; height: 106px; margin: 6px 10px 2px 0; }
+  .stick-pilot { width: 104px; height: 120px; left: -6px; bottom: -8px; }
+  .guide-airflow { bottom: 0; font-size: 11px; letter-spacing: 5px; }
+  .guide-steps { display: flex; gap: 4px; margin-top: 9px; }
+  .guide-steps button { display: block; flex: 1; min-height: 35px; padding: 5px 4px; font-size: 9px; text-align: center; }
+  .guide-steps em { display: none; }
+  .gesture-guide .guide-explain { min-height: 0; margin: 7px 0 0; font-size: 10px; line-height: 1.35; }
+  .setup-camera-view { left: 12px; top: 31px; right: auto; width: 92px; height: 106px; }
+  .setup-camera-view span { display: none; }
+  .setup-controls { gap: 5px; }
+  .setup-control-switch button { min-height: 34px; font-size: 11px; }
+  .setup-controls small { min-height: 14px; }
+  @media (max-height: 720px) {
+    body.preflight.choosing-mode .gesture-guide { top: calc(7px + env(safe-area-inset-top)); padding: 7px 9px; }
+    .guide-demo { width: 72px; height: 84px; }
+    .stick-pilot { width: 88px; height: 101px; left: -8px; }
+    .setup-camera-view { left: 9px; top: 27px; width: 72px; height: 84px; }
+    .guide-steps { margin-top: 5px; }
+    .guide-steps button { min-height: 29px; }
+    .gesture-guide .guide-explain { font-size: 10px; }
+    .overlay-content { padding: 14px 17px 13px; }
+    .overlay-content .personal-best { margin-bottom: 8px; }
+    body.choosing-mode .overlay h2 { margin: 5px 0; font-size: 27px; }
+    .overlay-modes .mode-switch button { min-height: 49px; }
+    .overlay-modes { gap: 6px; margin-bottom: 8px; }
   }
   .overlay-content {
     width: 100%;

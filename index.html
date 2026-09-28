@@ -136,6 +136,14 @@
                     <p class="overlay-mode-note" id="overlayModeNote">
                       选一个玩法，再起飞。
                     </p>
+                    <div class="setup-controls">
+                      <span>用什么操控</span>
+                      <div class="setup-control-switch" role="group" aria-label="选择操控方式">
+                        <button id="setupManual" type="button" aria-pressed="true">⌨ 键盘 / 触屏</button>
+                        <button id="setupCamera" type="button" aria-pressed="false">◎ 摄像头体感</button>
+                      </div>
+                      <small id="setupControlHint">按空格扇翅，A / D 转向；手机按住画面上升。</small>
+                    </div>
                   </div>
                   <button class="start-button" id="startBtn">
                     开始游戏 <span aria-hidden="true">↗</span>
@@ -144,6 +152,27 @@
                     <kbd>SPACE</kbd> 扇翅 <kbd>A D</kbd> 转向
                   </div>
                 </div>
+                <aside class="gesture-guide" id="gestureGuide" aria-label="飞行手势新手引导">
+                  <div class="guide-heading"><span>飞行训练 · 30 秒看懂</span><b>HOW TO FLY</b></div>
+                  <div class="guide-demo" id="guideDemo" data-demo="flap">
+                    <div class="guide-motion-lines" aria-hidden="true"><i></i><i></i><i></i></div>
+                    <svg class="stick-pilot" viewBox="0 0 200 230" role="img" aria-label="火柴人示范双臂上下扇动">
+                      <circle class="stick-head" cx="100" cy="42" r="23" />
+                      <path class="stick-body" d="M100 67 L100 144" />
+                      <g class="stick-arm stick-arm-left"><path d="M100 85 L70 107 L48 83" /><circle cx="48" cy="83" r="6" /></g>
+                      <g class="stick-arm stick-arm-right"><path d="M100 85 L130 107 L152 83" /><circle cx="152" cy="83" r="6" /></g>
+                      <path class="stick-leg" d="M100 144 L74 195 M100 144 L126 195" />
+                    </svg>
+                    <div class="guide-airflow" aria-hidden="true">↑ ↑ ↑</div>
+                  </div>
+                  <div class="guide-steps" role="tablist" aria-label="查看飞行动作">
+                    <button type="button" data-guide="flap" role="tab" aria-selected="true"><em>01</em> 双臂扇动</button>
+                    <button type="button" data-guide="steer" role="tab" aria-selected="false"><em>02</em> 左右倾斜</button>
+                    <button type="button" data-guide="fall" role="tab" aria-selected="false"><em>03</em> 停扇下坠</button>
+                  </div>
+                  <p class="guide-explain" id="guideExplain">双臂上下反复扇动，每扇一次就补一点升力。扇得越勤，飞得越稳。</p>
+                  <div class="setup-camera-view" id="setupCameraView" hidden><video id="setupCameraPreview" autoplay muted playsinline></video><span>镜像预览 · 人站远一点，让肩膀和双手都入镜</span></div>
+                </aside>
               </div>
               <div
                 class="toast"

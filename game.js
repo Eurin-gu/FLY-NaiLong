@@ -352,6 +352,7 @@
     $("pauseBtn").textContent = "Ⅱ";
     $("pauseBtn").setAttribute("aria-label", "暂停游戏");
     document.body.classList.add("playing");
+    document.body.classList.remove("preflight");
     document.body.classList.remove("choosing-mode");
     $("startBtn").blur();
     toast(matchMedia("(max-width: 760px)").matches && !s.camera
@@ -364,14 +365,25 @@
   // 开局分两步：先「开始游戏」，再选飞行方式，最后「一键起飞」。
   // 结算 / 暂停复用同一个浮层，所以 overlay() 会把模式选择收起来。
   let overlayStep = "intro";
+  document.body.classList.add("preflight");
+  let setupControl = matchMedia("(max-width: 760px)").matches ? "camera" : "manual";
+  function syncSetupControl() {
+    $("setupManual").setAttribute("aria-pressed", String(setupControl === "manual"));
+    $("setupCamera").setAttribute("aria-pressed", String(setupControl === "camera"));
+    $("setupControlHint").textContent = setupControl === "camera"
+      ? (s.camera ? "体感已就绪。双臂完整入镜，连续上下扇动。" : "选中后开启摄像头；让肩膀和双手都进入画面。")
+      : (matchMedia("(max-width: 760px)").matches ? "按住画面上升，左右拖动转向。" : "按空格反复扇翅，A / D 转向。按下更快地升高。")
+  }
   function showModeStep() {
     overlayStep = "modes";
     s.flight = null;
     document.body.classList.add("choosing-mode");
+    document.body.classList.add("preflight");
     $("overlayTag").textContent = "02 / 选择玩法";
     $("overlayTitle").textContent = "今天怎么飞？";
     $("overlayDescription").textContent = "选好模式，马上起飞。";
     $("overlayModes").hidden = false;
+    syncSetupControl();
     $("overlayModeNote").textContent = "选一个玩法，再起飞。";
     document.querySelectorAll("[data-flight]").forEach((button) => {
       button.classList.remove("selected");
@@ -384,6 +396,7 @@
   function overlay(tag, title, description, label) {
     overlayStep = "done";
     document.body.classList.remove("choosing-mode");
+    document.body.classList.remove("preflight");
     $("overlayModes").hidden = true;
     $("startBtn").disabled = false;
     $("overlayTag").textContent = tag;
@@ -923,8 +936,16 @@
     if (!s.flight || launching) return;
     launching = true;
     $("startBtn").disabled = true;
-    if (matchMedia("(max-width: 760px)").matches && !s.camera) {
-      await enableCamera();
+    if (setupControl === "camera" && !s.camera) {
+      const ready = await enableCamera();
+      if (!ready) {
+        setupControl = "manual";
+        syncSetupControl();
+        $("setupControlHint").textContent = "摄像头未就绪。已切到键盘 / 触屏，确认后再开始飞行。";
+        launching = false;
+        $("startBtn").disabled = false;
+        return;
+      }
     }
     launching = false;
     $("startBtn").disabled = false;
@@ -958,6 +979,36 @@
       $("startBtn").innerHTML = "开始飞行 <span aria-hidden=\"true\">↗</span>";
     }),
   );
+  $("setupManual").addEventListener("click", () => {
+    setupControl = "manual";
+    stopCamera();
+    syncSetupControl();
+  });
+  $("setupCamera").addEventListener("click", async () => {
+    setupControl = "camera";
+    syncSetupControl();
+    $("setupCamera").disabled = true;
+    const ready = await enableCamera();
+    $("setupCamera").disabled = false;
+    if (!ready) setupControl = "manual";
+    syncSetupControl();
+  });
+  const guideCopy = {
+    flap: "双臂上下反复扇动，每扇一次就补一点升力。扇得越勤，飞得越稳。",
+    steer: "肩膀和身体一起向左或向右倾斜，奶龙就会跟着偏航。",
+    fall: "双臂停下，升力消失；奶龙会按重力加速下坠。快继续扇动！",
+  };
+  document.querySelectorAll("[data-guide]").forEach((button) => button.addEventListener("click", () => {
+    const demo = button.dataset.guide;
+    $("guideDemo").dataset.demo = demo;
+    $("guideDemo").querySelector("svg").setAttribute("aria-label", {
+      flap: "火柴人示范双臂反复上下扇动",
+      steer: "火柴人示范身体左右倾斜",
+      fall: "火柴人示范停扇后加速下坠",
+    }[demo]);
+    $("guideExplain").textContent = guideCopy[demo];
+    document.querySelectorAll("[data-guide]").forEach((item) => item.setAttribute("aria-selected", String(item === button)));
+  }));
   const controls = [
     "Space",
     "KeyW",
@@ -1066,6 +1117,8 @@
     stream?.getTracks().forEach((t) => t.stop());
     stream = null;
     $("cameraPreview").srcObject = null;
+    $("setupCameraPreview").srcObject = null;
+    $("setupCameraView").hidden = true;
     $("cameraView").hidden = true;
     $("cameraBtn").disabled = false;
     $("cameraBtn").classList.remove("selected");
@@ -1353,6 +1406,9 @@
       loaderText.textContent = "摄像头已连接，正在加载识别模型…";
       $("cameraPreview").srcObject = stream;
       await $("cameraPreview").play();
+      $("setupCameraPreview").srcObject = stream;
+      $("setupCameraView").hidden = false;
+      $("setupCameraPreview").play().catch(() => {});
       $("cameraStatus").textContent = "正在加载动作识别…";
       await loadPose();
       loaderBar.style.width = "72%";
@@ -1400,6 +1456,7 @@
       $("keyboardBtn").setAttribute("aria-pressed", "false");
       $("cameraBtn").setAttribute("aria-pressed", "true");
       if (matchMedia("(max-width: 760px)").matches) $("cameraBtn").textContent = "体感已开";
+      syncSetupControl();
       const process = async () => {
         if (generation !== cameraGeneration || !s.camera) return;
         try {
