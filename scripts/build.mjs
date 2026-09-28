@@ -158,7 +158,7 @@ for (const [name, file] of jsEntries) {
   emit(name, ".js", out);
 }
 
-emit("style", ".css", buildCss(read("style.css"), "style.css"));
+emit("style", ".css", buildCss(read("style.css") + "\n" + read("experience.css"), "style.css + experience.css"));
 
 // Three.js ships pre-minified; copy it verbatim so its MIT banner is preserved.
 const three = fs.readFileSync(path.join(root, "vendor/three.min.js"));
@@ -235,6 +235,7 @@ let html = read("index.html");
 
 const replacements = [
   [`href="style.css"`, `href="${assets.style.url}"`],
+  [`<link rel="stylesheet" href="experience.css" />`, ``],
   [`src="vendor/three.min.js"`, `src="${assets.three.url}"`],
   [`src="flight-world.js"`, `src="${assets["flight-world"].url}"`],
   [`src="game.js"`, `src="${assets.game.url}"`],

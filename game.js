@@ -49,7 +49,7 @@
     spawnProtection: 0,
   };
   if (matchMedia("(max-width: 760px)").matches) {
-    $("cameraBtn").textContent = "体感";
+    $("cameraBtn").textContent = "开启体感";
   }
   let world,
     objects = [],
@@ -191,6 +191,10 @@
   }
   function startTutorial() {
     if (tutorialSeen) return;
+    if (matchMedia("(max-width: 760px)").matches) {
+      tutorialSteps[0].text = s.camera ? "对着镜头连续扇动双臂，飞起来" : "按住画面，向上滑动飞起来";
+      tutorialSteps[1].text = s.camera ? "左右倾斜身体，改变飞行方向" : "左右拖动画面，改变飞行方向";
+    }
     tutorialStep = 0;
     $("tutorialStep").textContent = "1";
     $("tutorialText").textContent = tutorialSteps[0].text;
@@ -348,8 +352,11 @@
     $("pauseBtn").textContent = "Ⅱ";
     $("pauseBtn").setAttribute("aria-label", "暂停游戏");
     document.body.classList.add("playing");
+    document.body.classList.remove("choosing-mode");
     $("startBtn").blur();
-    toast("开局保护 10 秒！先练习扇翅，保护结束后触地有 3 秒警告。");
+    toast(matchMedia("(max-width: 760px)").matches && !s.camera
+      ? "摄像头不可用，已切换触屏：按住画面上升，左右拖动转向。"
+      : "开局保护 10 秒，扇翅起飞！");
     startTutorial();
     hud();
     beep(300);
@@ -359,17 +366,26 @@
   let overlayStep = "intro";
   function showModeStep() {
     overlayStep = "modes";
-    $("overlayTag").textContent = "第二步 · 选个飞行方式";
-    $("overlayTitle").innerHTML = "今天怎么飞？";
-    $("overlayDescription").textContent =
-      "自由撒欢无限飞，挑战模式飞满 6 km 通关。";
+    s.flight = null;
+    document.body.classList.add("choosing-mode");
+    $("overlayTag").textContent = "02 / 选择玩法";
+    $("overlayTitle").textContent = "今天怎么飞？";
+    $("overlayDescription").textContent = "选好模式，马上起飞。";
     $("overlayModes").hidden = false;
-    $("startBtn").innerHTML = "一键起飞 <span>↗</span>";
+    $("overlayModeNote").textContent = "选一个玩法，再起飞。";
+    document.querySelectorAll("[data-flight]").forEach((button) => {
+      button.classList.remove("selected");
+      button.setAttribute("aria-pressed", "false");
+    });
+    $("startBtn").disabled = true;
+    $("startBtn").innerHTML = "选择玩法 <span aria-hidden=\"true\">↗</span>";
     beep(660);
   }
   function overlay(tag, title, description, label) {
     overlayStep = "done";
+    document.body.classList.remove("choosing-mode");
     $("overlayModes").hidden = true;
+    $("startBtn").disabled = false;
     $("overlayTag").textContent = tag;
     $("overlayTitle").innerHTML = title;
     $("overlayDescription").textContent = description;
@@ -403,6 +419,8 @@
   function finish(win) {
     s.mode = "ended";
     clearInput();
+    $("tutorial").hidden = true;
+    tutorialStep = -1;
     saveRecord();
     if (win) s.score += 500;
     overlay(
@@ -417,6 +435,8 @@
     $("groundWarning").hidden = true;
     setChaseFlash(false);
     $("pauseBtn").disabled = true;
+    document.body.classList.remove("playing");
+    stopCamera();
     hud();
   }
   // Returns true when the hit actually landed. Shields, dashes, rolls and the
@@ -885,7 +905,8 @@
   }
   requestAnimationFrame(loop);
   hud();
-  $("startBtn").addEventListener("click", () => {
+  let launching = false;
+  $("startBtn").addEventListener("click", async () => {
     if (s.mode === "paused") {
       pause();
       return;
@@ -895,10 +916,18 @@
       showModeStep();
       return;
     }
-    // 手机端点击开始即申请体感权限，进入游戏后默认保持体感模式。
-    if (matchMedia("(max-width: 760px)").matches && !s.camera) {
-      enableCamera().catch(() => {});
+    if (overlayStep === "done") {
+      showModeStep();
+      return;
     }
+    if (!s.flight || launching) return;
+    launching = true;
+    $("startBtn").disabled = true;
+    if (matchMedia("(max-width: 760px)").matches && !s.camera) {
+      await enableCamera();
+    }
+    launching = false;
+    $("startBtn").disabled = false;
     start();
   });
   $("rollBtn").addEventListener("click", barrelRoll);
@@ -923,7 +952,10 @@
           ? "无限航程 · 体面自动恢复 · 撞地或撞楼会被抓。"
           : "挑战 6 km · 三颗心 · 善用护盾和冲刺。";
       $("flightModeHint").textContent = modeNote;
-      $("overlayModeNote").textContent = modeNote;
+      $("overlayModeNote").textContent =
+        s.flight === "free" ? "没有终点，刷新自己的最高纪录。" : "飞满 6 公里，就算赢。";
+      $("startBtn").disabled = false;
+      $("startBtn").innerHTML = "开始飞行 <span aria-hidden=\"true\">↗</span>";
     }),
   );
   const controls = [
@@ -1040,6 +1072,7 @@
     $("keyboardBtn").classList.add("selected");
     $("keyboardBtn").setAttribute("aria-pressed", "true");
     $("cameraBtn").setAttribute("aria-pressed", "false");
+    if (matchMedia("(max-width: 760px)").matches) $("cameraBtn").textContent = "开启体感";
     $("modeText").textContent = "键盘模式";
     $("steerReadout").textContent = "左倾向左 · 右倾向右";
     $("steerDot").style.left = "50%";
@@ -1283,11 +1316,17 @@
     });
     return poseScript;
   }
-  async function enableCamera() {
-    if (s.camera) return;
+  let cameraLoadingPromise = null;
+  function enableCamera() {
+    if (cameraLoadingPromise) return cameraLoadingPromise;
+    if (s.camera) return Promise.resolve(true);
+    cameraLoadingPromise = activateCamera().finally(() => { cameraLoadingPromise = null; });
+    return cameraLoadingPromise;
+  }
+  async function activateCamera() {
     if (!navigator.mediaDevices?.getUserMedia) {
-      toast("摄像头需要 HTTPS 或 localhost，仍可使用键盘 / 触屏");
-      return;
+      toast("摄像头需要 HTTPS 或 localhost，可用触屏继续玩");
+      return false;
     }
     const generation = ++cameraGeneration;
     const loader = $("poseLoader");
@@ -1299,6 +1338,7 @@
     $("cameraView").hidden = false;
     $("cameraStatus").textContent = "正在申请摄像头权限…";
     $("cameraBtn").disabled = true;
+    if (matchMedia("(max-width: 760px)").matches) $("cameraBtn").textContent = "加载中";
     try {
       const incoming = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: 480, height: 360 },
@@ -1306,7 +1346,7 @@
       });
       if (generation !== cameraGeneration) {
         incoming.getTracks().forEach((t) => t.stop());
-        return;
+        return false;
       }
       stream = incoming;
       loaderBar.style.width = "28%";
@@ -1317,7 +1357,7 @@
       await loadPose();
       loaderBar.style.width = "72%";
       loaderText.textContent = "正在初始化动作识别…";
-      if (generation !== cameraGeneration) return;
+      if (generation !== cameraGeneration) return false;
       const currentPose = new window.Pose({
         locateFile: (f) => poseBase + f,
       });
@@ -1329,10 +1369,13 @@
         minTrackingConfidence: 0.6,
       });
       let poseFirstResult = false;
+      let resolveFirstResult;
+      const firstResult = new Promise((resolve) => { resolveFirstResult = resolve; });
       currentPose.onResults((result) => {
         if (generation !== cameraGeneration) return;
         if (!poseFirstResult) {
           poseFirstResult = true;
+          resolveFirstResult(true);
           loaderBar.style.width = "100%";
           loaderText.textContent = "体感已开启";
           setTimeout(() => { loader.hidden = true; }, 500);
@@ -1356,6 +1399,7 @@
       $("keyboardBtn").classList.remove("selected");
       $("keyboardBtn").setAttribute("aria-pressed", "false");
       $("cameraBtn").setAttribute("aria-pressed", "true");
+      if (matchMedia("(max-width: 760px)").matches) $("cameraBtn").textContent = "体感已开";
       const process = async () => {
         if (generation !== cameraGeneration || !s.camera) return;
         try {
@@ -1363,6 +1407,8 @@
         } catch {
           if (generation === cameraGeneration) {
             stopCamera();
+            resolveFirstResult(false);
+            loader.hidden = true;
             toast("动作识别暂不可用，请使用键盘 / 触屏");
           }
           return;
@@ -1370,8 +1416,16 @@
         if (generation === cameraGeneration) setTimeout(process, 16);
       };
       process();
+      const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 20000));
+      const ready = await Promise.race([firstResult, timeout]);
+      if (!ready && generation === cameraGeneration) {
+        stopCamera();
+        loader.hidden = true;
+        toast("识别模型加载超时，已切换触屏操作");
+      }
+      return ready;
     } catch (e) {
-      if (generation !== cameraGeneration) return;
+      if (generation !== cameraGeneration) return false;
       stopCamera();
       loader.hidden = true;
       toast(
@@ -1379,6 +1433,7 @@
           ? "未获得摄像头权限，可继续使用键盘 / 触屏"
           : "摄像头或识别组件未就绪，可继续使用键盘 / 触屏",
       );
+      return false;
     }
   }
   $("cameraBtn").addEventListener("click", enableCamera);

@@ -1,0 +1,204 @@
+/* The game has one clear entry flow.  These rules deliberately come after the
+   legacy page styles so the ready and playing screens remain easy to scan. */
+:root {
+  --paper: #f4f3ec;
+  --ink: #263c39;
+  --orange: #f3764b;
+  --line: #dfdfd4;
+}
+
+.header-middle,
+.intro,
+.tips-row,
+footer,
+.scene-stamp { display: none !important; }
+
+.app { max-width: 1700px; padding: 0 clamp(18px, 3vw, 48px); }
+.topbar { height: 66px; border-color: #d9ded3; }
+.brand { font-size: 17px; letter-spacing: -.02em; }
+.brand small { display: none; }
+.brand-mark { width: 36px; height: 36px; border-radius: 11px; font-size: 23px; }
+.header-actions { gap: 16px; }
+.game-layout { margin-top: 16px; grid-template-columns: minmax(0, 1fr) 254px; gap: 14px; }
+.flight-panel { border-radius: 18px; box-shadow: none; }
+.stage { height: min(78vh, 780px); min-height: 560px; }
+.stage-top { height: 43px; }
+.route { display: none; }
+.sidebar { gap: 10px; }
+.sidebar section { box-shadow: none; }
+.panel-heading h2 { font-size: 13px; }
+.control-panel .panel-subtitle,
+.control-panel .fuel-note,
+.control-panel .control-tip,
+.camera-panel .steer-feedback { display: none; }
+.control-panel .fuel-heading { margin-top: 2px; }
+.control-panel .fuel-heading .subtle { display: none; }
+.control-panel .fly-button { min-height: 68px; }
+.skill-panel .skill-copy small { display: none; }
+.skill-panel .skill { min-height: 45px; }
+.camera-panel { background: #fffdf8; }
+
+body:not(.playing) .game-layout { display: block; }
+body:not(.playing) .sidebar,
+body:not(.playing) .stage-top,
+body:not(.playing) .in-game-hud,
+body:not(.playing) .flight-instruments,
+body:not(.playing) .height-ruler,
+body:not(.playing) .reticle { display: none !important; }
+body:not(.playing) .stage { height: min(calc(100dvh - 100px), 820px); min-height: 580px; }
+body:not(.playing) .flight-panel { border-radius: 20px; }
+
+.overlay {
+  align-items: center;
+  padding: clamp(22px, 5vw, 72px);
+  background: linear-gradient(90deg, rgba(245,245,229,.96) 0%, rgba(245,245,229,.82) 33%, rgba(245,245,229,.06) 72%);
+}
+.overlay-content { width: min(440px, 48%); margin: 0; }
+.overlay-content .personal-best {
+  display: inline-flex;
+  gap: 9px;
+  align-items: baseline;
+  width: auto;
+  margin-bottom: 31px;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+}
+.overlay-content .personal-best small { font-size: 11px; color: #687d73; }
+.overlay-content .personal-best strong { margin: 0; font-size: 16px; color: #344d48; }
+.overlay-content .personal-best em { font-size: 11px; }
+.flight-tag { font-size: 11px; letter-spacing: .12em; color: #bb6f46; }
+.flight-tag::before { width: 21px; background: #d2916b; }
+.overlay h2 {
+  margin: 14px 0 10px;
+  font-size: clamp(46px, 5.4vw, 72px);
+  line-height: 1.07;
+  letter-spacing: -.075em;
+  color: #263c39;
+}
+.overlay p { max-width: 350px; margin-bottom: 28px; font-size: 14px; line-height: 1.65; color: #536b61; }
+.start-button {
+  min-width: 220px;
+  min-height: 55px;
+  padding: 12px 19px;
+  border-radius: 12px;
+  background: var(--orange);
+  box-shadow: 0 4px 0 #d65c36;
+  font-size: 16px;
+}
+.start-button:hover { background: #e8673f; box-shadow: 0 4px 0 #c95832; }
+.start-button:disabled { opacity: 1; color: #7c8b7f; background: #e0e5dc; box-shadow: none; }
+.start-tip { margin-top: 18px; font-size: 11px; }
+.overlay-modes { align-items: stretch; gap: 11px; width: 100%; margin: 0 0 15px; }
+.overlay-modes .mode-switch { max-width: none; gap: 9px; padding: 0; background: transparent; }
+.overlay-modes .mode-switch button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 65px;
+  width: 100%;
+  padding: 13px 17px;
+  border: 1px solid rgba(64,85,69,.2);
+  border-radius: 13px;
+  background: rgba(255,253,247,.89);
+  color: #2e4540;
+  text-align: left;
+  box-shadow: none;
+}
+.overlay-modes .mode-switch button:hover { border-color: #ee8053; }
+.overlay-modes .mode-switch button.selected { border: 2px solid #e86d42; background: #fff8ec; color: #253d36; }
+.overlay-modes .mode-switch strong { font-size: 16px; font-weight: 760; }
+.overlay-modes .mode-switch small { font-size: 11px; color: #728177; white-space: nowrap; }
+.overlay-mode-note { max-width: none; margin: 0; font-size: 11px !important; text-align: left; }
+body.choosing-mode .overlay-content .personal-best { margin-bottom: 19px; }
+body.choosing-mode .overlay h2 { font-size: clamp(36px, 4.4vw, 58px); }
+body.choosing-mode .overlay #overlayDescription { margin-bottom: 16px; }
+body.choosing-mode .start-tip { display: none; }
+
+@media (max-width: 760px) {
+  html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
+  .app, main, .game-layout, .flight-panel { width: 100%; height: 100dvh; min-height: 0; margin: 0; padding: 0; }
+  .flight-panel { border: 0; border-radius: 0 !important; overflow: hidden; }
+  .topbar, .stage-top, .route { display: none !important; }
+  .stage,
+  body.playing .stage,
+  body:not(.playing) .stage { width: 100%; height: 100dvh; min-height: 0; border-radius: 0; }
+  .stage-below,
+  body.playing .stage-below,
+  .mobile-steer { display: none !important; }
+  body:not(.playing) .sidebar { display: none !important; }
+  .overlay {
+    align-items: flex-end;
+    padding: 0 14px max(20px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent 29%, rgba(32,53,43,.07) 58%, rgba(32,53,43,.23) 100%);
+  }
+  .overlay-content {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 21px 20px 18px;
+    border: 1px solid rgba(255,255,255,.8);
+    border-radius: 20px;
+    background: rgba(250,249,239,.95);
+    box-shadow: 0 12px 42px rgba(33,55,43,.14);
+    backdrop-filter: blur(14px);
+  }
+  .overlay-content .personal-best { margin-bottom: 14px; }
+  .flight-tag { font-size: 10px; }
+  .overlay h2 { margin: 8px 0 8px; font-size: clamp(36px, 10vw, 48px); line-height: 1.07; }
+  .overlay p { margin: 0 0 17px; max-width: none; font-size: 12px; line-height: 1.5; }
+  .start-button { width: 100%; min-width: 0; min-height: 50px; font-size: 15px; }
+  .start-tip { display: none; }
+  body.choosing-mode .overlay h2 { font-size: 32px; }
+  body.choosing-mode .overlay #overlayDescription { margin-bottom: 13px; }
+  .overlay-modes .mode-switch button { min-height: 60px; padding: 11px 13px; }
+  .overlay-modes .mode-switch strong { font-size: 14px; }
+  .overlay-modes .mode-switch small { font-size: 10px; }
+  body.playing .sidebar { display: block; height: 0; }
+  body.playing:has(#gameOverlay:not([hidden])) .skill-panel,
+  body.playing:has(#gameOverlay:not([hidden])) .camera-panel { display: none !important; }
+  body.playing .game-layout > .sidebar > .camera-panel {
+    display: block;
+    top: calc(12px + env(safe-area-inset-top));
+    right: 12px;
+    width: 108px;
+    max-width: none;
+    padding: 5px;
+    border: 1px solid rgba(255,255,255,.7);
+    border-radius: 12px;
+    background: rgba(255,253,245,.92);
+    box-shadow: 0 5px 20px rgba(25,45,40,.16);
+  }
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view { display: block; height: 68px; max-height: none; margin: 0 0 4px; }
+  body.playing .game-layout > .sidebar > .camera-panel .camera-view[hidden] { display: none; }
+  body.playing .game-layout > .sidebar > .camera-panel .mode-switch { display: flex; }
+  body.playing .game-layout > .sidebar > .camera-panel #cameraBtn { min-height: 25px; }
+  body.playing .game-layout > .sidebar > .camera-panel #cameraBtn[aria-pressed="false"] {
+    border-color: #d1d9d2;
+    background: #e6eae4;
+    color: #466056;
+  }
+  body.playing .in-game-hud {
+    display: flex;
+    justify-content: flex-start;
+    gap: 17px;
+    inset: calc(14px + env(safe-area-inset-top)) 126px auto 14px;
+  }
+  body.playing .score-chip strong { font-size: 22px; }
+  body.playing .health-chip { margin: 0; text-align: left; }
+  body.playing .health-chip > span:first-child { white-space: nowrap; }
+  body.playing .health-chip #healthText { font-size: 15px; letter-spacing: 1px; white-space: nowrap; }
+  body.playing .flight-instruments { bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; right: 12px; }
+  body.playing .height-ruler { display: none; }
+  body.playing .chase { top: 115px; max-width: 190px; }
+  body.playing .ground-warning { top: 96px; left: 14px; }
+  body.playing .tutorial { top: 162px; }
+}
+
+@media (max-width: 380px) and (max-height: 720px) {
+  .overlay-content { padding: 15px 17px; }
+  .overlay-content .personal-best { margin-bottom: 8px; }
+  .overlay-modes .mode-switch button { min-height: 52px; }
+  .overlay h2 { font-size: 32px; }
+}

@@ -17,6 +17,7 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='50'%3E🐲%3C/text%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="experience.css" />
   </head>
   <body>
     <div class="app">
@@ -27,9 +28,6 @@
             >奶龙 · 喷射起飞<small>UNIDENTIFIED FARTING OBJECT</small></span
           ></a
         >
-        <div class="header-middle">
-          <span class="online-dot"></span> 不是尾气，是向上的决心
-        </div>
         <div class="header-actions">
           <button
             class="icon-button"
@@ -51,15 +49,6 @@
         </div>
       </header>
       <main>
-        <section class="intro">
-          <div class="personal-best">
-            <span class="best-icon">↟</span>
-            <div>
-              <small>最高飞行纪录</small
-              ><strong id="bestText">0 <em>m</em></strong>
-            </div>
-          </div>
-        </section>
         <div class="game-layout">
           <section class="flight-panel" aria-label="3D 飞行游戏">
             <div class="stage-top">
@@ -127,35 +116,34 @@
               <div id="targetHint" class="target-hint" hidden></div>
               <div class="overlay" id="gameOverlay">
                 <div class="overlay-content">
-                  <div class="flight-tag" id="overlayTag">
-                    奶龙已就位 · 动力来源不便透露
+                  <div class="personal-best">
+                    <small>最高飞行纪录</small>
+                    <strong id="bestText">0 <em>m</em></strong>
                   </div>
-                  <h2 id="overlayTitle">我不是胖。<br />我是燃料多。</h2>
+                  <div class="flight-tag" id="overlayTag">01 / 准备起飞</div>
+                  <h2 id="overlayTitle">奶龙，<br />起飞。</h2>
                   <p id="overlayDescription">
-                    扇动翅膀才有升力。<br />今天，让全城仰望你的背影。
+                    扇翅上升，停下就坠。<br />别让交警追上。
                   </p>
                   <div class="overlay-modes" id="overlayModes" hidden>
-                    <div class="mode-switch">
-                      <button class="selected" data-flight="free" aria-pressed="true">
-                        ∞ 自由撒欢</button
+                    <div class="mode-switch" role="group" aria-label="选择飞行方式">
+                      <button data-flight="free" aria-pressed="false">
+                        <strong>自由飞行</strong><small>想飞多久都行</small></button
                       ><button data-flight="challenge" aria-pressed="false">
-                        ⚑ 6 km 挑战
+                        <strong>6 公里挑战</strong><small>飞满即通关</small>
                       </button>
                     </div>
                     <p class="overlay-mode-note" id="overlayModeNote">
-                      无限航程 · 体面自动恢复 · 撞地或撞楼会被抓。
+                      选一个玩法，再起飞。
                     </p>
                   </div>
                   <button class="start-button" id="startBtn">
-                    开始游戏 <span>↗</span>
+                    开始游戏 <span aria-hidden="true">↗</span>
                   </button>
                   <div class="start-tip" id="startTip">
-                    <kbd>SPACE</kbd> 喷射上升 <kbd>↓</kbd> 俯冲
+                    <kbd>SPACE</kbd> 扇翅 <kbd>A D</kbd> 转向
                   </div>
                 </div>
-                <span class="scene-stamp"
-                  >非传统航空动力<br />起飞之前 · 请站上风口</span
-                >
               </div>
               <div
                 class="toast"
@@ -220,8 +208,7 @@
           <aside class="sidebar">
             <section class="control-panel">
               <div class="panel-heading">
-                <h2>当前飞行方式</h2>
-                <span class="pill">真 · 3D</span>
+                <h2>飞行控制</h2>
               </div>
               <p class="panel-subtitle" id="flightModeHint">
                 无限航程 · 3 格生命 · 撞地或撞楼会被抓。
