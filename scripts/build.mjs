@@ -257,8 +257,6 @@ const head = [
   `    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png" />`,
   `    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />`,
   `    <link rel="preload" as="style" href="${assets.style.url}" />`,
-  `    <link rel="preload" as="script" href="${assets.three.url}" crossorigin="anonymous" />`,
-  `    <link rel="preload" as="script" href="${assets["flight-world"].url}" crossorigin="anonymous" />`,
   `    <meta name="color-scheme" content="light" />`,
   `    <meta name="robots" content="index,follow,max-image-preview:large" />`,
   siteUrl ? `    <link rel="canonical" href="${siteUrl}/" />` : "",
