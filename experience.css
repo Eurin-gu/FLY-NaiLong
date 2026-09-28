@@ -136,6 +136,7 @@ body.choosing-mode .start-tip { display: none; }
 body.preflight .gesture-guide { display: block; }
 .guide-heading { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-size: 12px; font-weight: 800; }
 .guide-heading b { color: #9ca797; font-size: 9px; letter-spacing: .16em; }
+.guide-heading b.ready { color: #3c965e; }
 .guide-demo { position: relative; height: 195px; overflow: hidden; margin: 12px 0; border-radius: 13px; background: radial-gradient(circle at 50% 70%, #fff8d2 0, #e9f1e4 65%, #e1ece5 100%); }
 .stick-pilot { position: absolute; width: 174px; height: 190px; left: calc(50% - 87px); bottom: -16px; overflow: visible; filter: drop-shadow(0 5px 0 rgba(59,90,64,.12)); }
 .stick-pilot circle, .stick-pilot path { stroke: #304c43; stroke-width: 9; fill: none; stroke-linecap: round; stroke-linejoin: round; }
@@ -161,10 +162,11 @@ body.preflight .gesture-guide { display: block; }
 .setup-control-switch button { min-height: 40px; border: 1px solid #d5dfd2; border-radius: 10px; background: #fffdf7; color: #597066; font-size: 12px; font-weight: 750; cursor: pointer; }
 .setup-control-switch button[aria-pressed="true"] { border-color: #e8754d; background: #fff1df; color: #483c2f; }
 .setup-controls small { min-height: 27px; font-size: 10px; line-height: 1.35; color: #728177; }
-.setup-camera-view { position: absolute; left: 17px; right: 17px; top: 45px; height: 195px; border-radius: 12px; overflow: hidden; background: #1d2927; }
+.setup-camera-view { position: absolute; top: 55px; right: 22px; width: 104px; height: 84px; border: 3px solid #fffdf7; border-radius: 12px; overflow: hidden; background: #1d2927; box-shadow: 0 7px 24px rgba(28,43,35,.22); }
+.setup-camera-view.pose-found { border-color: #a6d9a4; }
 .setup-camera-view[hidden] { display: none; }
 .setup-camera-view video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-.setup-camera-view span { position: absolute; left: 8px; right: 8px; bottom: 7px; padding: 4px; border-radius: 4px; background: rgba(19,29,26,.72); color: white; font-size: 10px; text-align: center; }
+.setup-camera-view span { position: absolute; left: 2px; right: 2px; bottom: 3px; padding: 3px 1px; border-radius: 4px; background: rgba(19,29,26,.76); color: white; font-size: 8px; line-height: 1.2; text-align: center; }
 @keyframes flap-left { from { transform: rotate(-28deg); } to { transform: rotate(24deg); } }
 @keyframes flap-right { from { transform: rotate(28deg); } to { transform: rotate(-24deg); } }
 @keyframes pilot-steer { from { transform: rotate(-19deg); } to { transform: rotate(19deg); } }
@@ -204,17 +206,20 @@ body.preflight .gesture-guide { display: block; }
     padding: 10px 12px;
     border-radius: 14px;
   }
-  .guide-heading { font-size: 10px; }
-  .guide-heading b { font-size: 8px; }
+  .guide-heading { font-size: 11px; }
+  .guide-heading b { font-size: 9px; }
   .guide-demo { float: left; width: 92px; height: 106px; margin: 6px 10px 2px 0; }
   .stick-pilot { width: 104px; height: 120px; left: -6px; bottom: -8px; }
   .guide-airflow { bottom: 0; font-size: 11px; letter-spacing: 5px; }
   .guide-steps { display: flex; gap: 4px; margin-top: 9px; }
-  .guide-steps button { display: block; flex: 1; min-height: 35px; padding: 5px 4px; font-size: 9px; text-align: center; }
+  .guide-steps button { display: block; flex: 1; min-height: 35px; padding: 5px 4px; font-size: 10px; text-align: center; }
   .guide-steps em { display: none; }
-  .gesture-guide .guide-explain { min-height: 0; margin: 7px 0 0; font-size: 10px; line-height: 1.35; }
-  .setup-camera-view { left: 12px; top: 31px; right: auto; width: 92px; height: 106px; }
-  .setup-camera-view span { display: none; }
+  .gesture-guide .guide-explain { min-height: 0; margin: 7px 0 0; font-size: 11px; line-height: 1.35; }
+  .setup-camera-view { left: 100px; top: 31px; right: auto; width: 71px; height: 98px; border-width: 2px; }
+  .setup-camera-view span { font-size: 7px; }
+  .gesture-guide:has(.setup-camera-view:not([hidden])) .guide-steps,
+  .gesture-guide:has(.setup-camera-view:not([hidden])) .guide-explain { margin-left: 148px; }
+  .gesture-guide:has(.setup-camera-view:not([hidden])) .guide-steps { margin-left: 148px; }
   .setup-controls { gap: 5px; }
   .setup-control-switch button { min-height: 34px; font-size: 11px; }
   .setup-controls small { min-height: 14px; }
@@ -222,10 +227,12 @@ body.preflight .gesture-guide { display: block; }
     body.preflight.choosing-mode .gesture-guide { top: calc(7px + env(safe-area-inset-top)); padding: 7px 9px; }
     .guide-demo { width: 72px; height: 84px; }
     .stick-pilot { width: 88px; height: 101px; left: -8px; }
-    .setup-camera-view { left: 9px; top: 27px; width: 72px; height: 84px; }
+    .setup-camera-view { left: 89px; top: 27px; width: 64px; height: 84px; }
+    .gesture-guide:has(.setup-camera-view:not([hidden])) .guide-steps,
+    .gesture-guide:has(.setup-camera-view:not([hidden])) .guide-explain { margin-left: 145px; }
     .guide-steps { margin-top: 5px; }
     .guide-steps button { min-height: 29px; }
-    .gesture-guide .guide-explain { font-size: 10px; }
+    .gesture-guide .guide-explain { font-size: 11px; }
     .overlay-content { padding: 14px 17px 13px; }
     .overlay-content .personal-best { margin-bottom: 8px; }
     body.choosing-mode .overlay h2 { margin: 5px 0; font-size: 27px; }

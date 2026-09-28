@@ -67,6 +67,7 @@ try {
   $browser = Start-Process -FilePath $Edge -PassThru -WindowStyle Hidden -ArgumentList @(
     "--headless=new", "--disable-gpu", "--mute-audio", "--hide-scrollbars",
     "--no-first-run", "--no-default-browser-check", "--disable-extensions",
+    "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
     "--remote-debugging-port=$CdpPort", "--remote-allow-origins=*",
     "--user-data-dir=$profile", "about:blank"
   )

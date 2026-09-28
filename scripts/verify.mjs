@@ -180,14 +180,38 @@ async function checkBrowser() {
   );
 
   await page.screenshot({ path: path.join(SHOTS, "desktop-ready.png") });
+  record("gesture guide is visible before flight", await page.locator("#gestureGuide").isVisible());
+  await page.locator('[data-guide="steer"]').click();
+  record("gesture guide explains steering", (await page.locator("#guideExplain").textContent()).includes("倾斜"));
 
   // Start the game and hold thrust. Assertions read the visible HUD, which is
   // exactly what a player sees in production.
   // 开局两步：开始游戏 → 选飞行方式 → 一键起飞
+  let checkedPreflightCamera = false;
   const beginGame = async () => {
     const start = page.locator("#startBtn");
     await start.click();
-    await page.waitForTimeout(250);
+    record("preflight offers camera mode", await page.locator("#setupCamera").isVisible());
+    if (!checkedPreflightCamera) {
+      checkedPreflightCamera = true;
+      await page.locator("#setupCamera").click();
+      const ready = await page.waitForFunction(
+        () => document.getElementById("setupCameraView")?.dataset.poseReady === "true",
+        null,
+        { timeout: 30000 },
+      ).then(() => true).catch(() => false);
+      record("preflight camera waits for pose model", ready);
+      record("preflight shows camera preview", ready && await page.locator("#setupCameraView").isVisible());
+      record("preflight gives camera framing feedback", ready && /入镜|起飞/.test(await page.locator("#setupCameraFeedback").textContent()));
+      if (ready) {
+        await page.screenshot({ path: path.join(SHOTS, "preflight-camera.png") });
+        await page.setViewportSize({ width: 375, height: 667 });
+        await page.screenshot({ path: path.join(SHOTS, "mobile-preflight-camera.png") });
+        await page.setViewportSize({ width: 1440, height: 1000 });
+      }
+    }
+    await page.locator('[data-flight="free"]').click();
+    await page.locator("#setupManual").click();
     await start.click();
   };
   await beginGame();
@@ -278,7 +302,7 @@ async function checkBrowser() {
   };
   const restartRun = async () => {
     if (await page.locator("#gameOverlay").isVisible()) {
-      await page.locator("#startBtn").click();
+      await beginGame();
       await page.waitForTimeout(500);
     }
   };

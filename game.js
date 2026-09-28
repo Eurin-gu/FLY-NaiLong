@@ -367,11 +367,12 @@
   let overlayStep = "intro";
   document.body.classList.add("preflight");
   let setupControl = matchMedia("(max-width: 760px)").matches ? "camera" : "manual";
+  let poseReady = false;
   function syncSetupControl() {
     $("setupManual").setAttribute("aria-pressed", String(setupControl === "manual"));
     $("setupCamera").setAttribute("aria-pressed", String(setupControl === "camera"));
     $("setupControlHint").textContent = setupControl === "camera"
-      ? (s.camera ? "体感已就绪。双臂完整入镜，连续上下扇动。" : "选中后开启摄像头；让肩膀和双手都进入画面。")
+      ? (poseReady ? "体感已就绪。双臂完整入镜，连续上下扇动。" : s.camera ? "摄像头已连接，正在确认动作识别…" : "选中后开启摄像头；让肩膀和双手都进入画面。")
       : (matchMedia("(max-width: 760px)").matches ? "按住画面上升，左右拖动转向。" : "按空格反复扇翅，A / D 转向。按下更快地升高。")
   }
   function showModeStep() {
@@ -1108,6 +1109,7 @@
   // Camera lifecycle is appended from the previous version, retaining local-only pose processing.
   function stopCamera() {
     cameraGeneration++;
+    poseReady = false;
     s.camera = false;
     s.gesture = false;
     s.flapUntil = 0;
@@ -1119,6 +1121,11 @@
     $("cameraPreview").srcObject = null;
     $("setupCameraPreview").srcObject = null;
     $("setupCameraView").hidden = true;
+    $("setupCameraView").dataset.poseReady = "false";
+    $("setupCameraView").classList.remove("pose-found");
+    $("setupCameraFeedback").textContent = "让肩膀和双手入镜";
+    $("guideStatus").textContent = "HOW TO FLY";
+    $("guideStatus").classList.remove("ready");
     $("cameraView").hidden = true;
     $("cameraBtn").disabled = false;
     $("cameraBtn").classList.remove("selected");
@@ -1431,6 +1438,9 @@
         if (generation !== cameraGeneration) return;
         if (!poseFirstResult) {
           poseFirstResult = true;
+          poseReady = true;
+          $("setupCameraView").dataset.poseReady = "true";
+          syncSetupControl();
           resolveFirstResult(true);
           loaderBar.style.width = "100%";
           loaderText.textContent = "体感已开启";
@@ -1438,6 +1448,22 @@
         }
         const now = performance.now();
         const text = trackFlap(result.poseLandmarks, now);
+        const landmarks = result.poseLandmarks;
+        const shoulderSeen = landmarks?.[11]?.visibility > 0.4 && landmarks?.[12]?.visibility > 0.4;
+        const handsSeen = landmarks?.[15]?.visibility > 0.4 && landmarks?.[16]?.visibility > 0.4;
+        $("setupCameraView").classList.toggle("pose-found", Boolean(shoulderSeen && handsSeen));
+        const framing = !shoulderSeen
+          ? "请退后，让肩膀入镜"
+          : !handsSeen ? "再退后，让双手入镜" : "双臂已入镜 · 可以起飞";
+        $("setupCameraFeedback").textContent = framing;
+        if (overlayStep === "modes" && setupControl === "camera") {
+          const hint = !shoulderSeen
+            ? "识别已启动，但没看到肩膀；请后退一步。"
+            : !handsSeen ? "肩膀已入镜，再后退一点露出双手。" : "动作识别成功。上下扇动双臂，就能起飞。";
+          if ($("setupControlHint").textContent !== hint) $("setupControlHint").textContent = hint;
+          $("guideStatus").textContent = shoulderSeen && handsSeen ? "姿态就绪 ✓" : "调整站位 ↗";
+          $("guideStatus").classList.toggle("ready", Boolean(shoulderSeen && handsSeen));
+        }
         // 技能手势的提示停留一下，别被下一帧的扇翅提示立刻盖掉。
         if (/^[🛡💥🌀]/.test(text)) {
           poseNoticeUntil = now + 1400;
