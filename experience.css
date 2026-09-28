@@ -373,3 +373,9 @@ body[data-screen="result"] .overlay h2 { font-size: clamp(36px, 5vw, 58px); }
 body[data-screen="result"] .overlay-content { display: flex; flex-direction: column; }
 body[data-screen="result"] .result-stats { order: 1; margin-top: 3px; }
 body[data-screen="result"] .start-button { order: 2; margin-top: 26px; }
+.result-goal[hidden], #changeModeBtn[hidden] { display: none; }
+body[data-screen="result"] .result-goal { order: 2; margin: 17px 0 0; font-size: 12px; line-height: 1.5; color: #758362; }
+body[data-screen="result"] .start-button { order: 3; margin-top: 20px; }
+body[data-screen="result"] #changeModeBtn { order: 4; align-self: center; padding: 18px 16px 2px; text-decoration: underline; text-underline-offset: 4px; }
+body[data-screen="result"] #changeModeBtn:disabled { opacity: .45; cursor: wait; }
+body[data-screen="result"] .toast, body[data-screen="paused"] .toast { display: none; }

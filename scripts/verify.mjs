@@ -305,7 +305,9 @@ async function checkBrowser() {
   };
   const restartRun = async () => {
     if (await page.locator("#gameOverlay").isVisible()) {
-      await beginGame();
+      record("result offers a separate mode change", await page.locator("#changeModeBtn").isVisible());
+      await page.locator("#startBtn").click();
+      record("replay starts without repeating setup", await page.locator("#gameOverlay").isHidden());
       await page.waitForTimeout(500);
     }
   };

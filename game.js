@@ -384,6 +384,8 @@
       : (matchMedia("(max-width: 760px)").matches ? "按住画面上升，左右拖动转向。" : "按空格反复扇翅，A / D 转向。按下更快地升高。")
   }
   function showModeStep() {
+    $("changeModeBtn").hidden = true;
+    $("resultGoal").hidden = true;
     s.menuPreview = true;
     document.body.dataset.screen = "setup";
     $("setupBack").hidden = false;
@@ -407,6 +409,8 @@
     beep(660);
   }
   function overlay(tag, title, description, label) {
+    $("changeModeBtn").hidden = true;
+    $("resultGoal").hidden = true;
     clearTimeout(toastTimer);
     $("toast").classList.remove("show");
     document.body.dataset.screen = s.mode === "paused" ? "paused" : "result";
@@ -451,6 +455,7 @@
     hud();
   }
   function finish(win) {
+    setupControl = s.camera ? "camera" : "manual";
     s.mode = "ended";
     clearInput();
     $("tutorial").hidden = true;
@@ -467,6 +472,11 @@
     $("overlayDescription").textContent = win ? "这回，天空记住你了。" : "人被抓了，纪录留下了。";
     $("resultStats").innerHTML = `<div><strong>${s.score}</strong><span>本局得分</span></div><div><strong>${Math.floor(s.peak)}<small>m</small></strong><span>最高飞行</span></div><div><strong>${s.rings}</strong><span>穿过光环</span></div>`;
     $("resultStats").hidden = false;
+    $("changeModeBtn").hidden = false;
+    $("resultGoal").hidden = false;
+    $("resultGoal").textContent = s.rings >= 3
+      ? "✓ 三环目标达成 · 奖励 300 分已计入战绩"
+      : `还差 ${3 - s.rings} 个光环，下一趟把 300 分带走。`;
     s.groundTime = 0;
     $("chase").hidden = true;
     $("groundWarning").hidden = true;
@@ -945,6 +955,9 @@
   requestAnimationFrame(loop);
   hud();
   let launching = false;
+  $("changeModeBtn").addEventListener("click", () => {
+    if (!launching) showModeStep();
+  });
   let greetingIndex = 0;
   $("dragonHello").addEventListener("click", () => {
     s.greetUntil = s.time + 1.8;
@@ -981,25 +994,27 @@
       showModeStep();
       return;
     }
-    if (overlayStep === "done") {
-      showModeStep();
-      return;
-    }
+    // A replay keeps the last flight and control choices; changing them is a
+    // separate action on the result card.
     if (!s.flight || launching) return;
     launching = true;
     $("startBtn").disabled = true;
+    $("changeModeBtn").disabled = true;
     if (setupControl === "camera" && !s.camera) {
       const ready = await enableCamera();
       if (!ready) {
         setupControl = "manual";
+        if (overlayStep === "done") showModeStep();
         syncSetupControl();
         $("setupControlHint").textContent = "摄像头未就绪。已切到键盘 / 触屏，确认后再开始飞行。";
         launching = false;
-        $("startBtn").disabled = false;
+        $("changeModeBtn").disabled = false;
+        $("startBtn").disabled = !s.flight;
         return;
       }
     }
     launching = false;
+    $("changeModeBtn").disabled = false;
     $("startBtn").disabled = false;
     start();
   });
