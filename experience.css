@@ -456,6 +456,18 @@ body.learning .tutorial button { min-height: 40px; flex-shrink: 0; }
    原来的 .pose-loader 样式只写在 style.css 的 @media (max-width:760px) 里，
    桌面端加载时完全没有样式。这里补全并统一（本文件最后加载，优先级够）。
    卡片背景是一只自己做各种小动作的奶龙，配一条匀速爬升的进度条。 */
+/* 加载时的背景"布"：半透明米色 + 轻微模糊，把后面的 3D 场景压下去 */
+.pose-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  background: rgba(246, 242, 226, 0.9);
+  backdrop-filter: blur(6px) saturate(0.85);
+  -webkit-backdrop-filter: blur(6px) saturate(0.85);
+}
+.pose-scrim[hidden] {
+  display: none;
+}
 .pose-loader {
   position: absolute;
   left: 50%;

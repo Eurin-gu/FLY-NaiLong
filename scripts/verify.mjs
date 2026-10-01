@@ -132,12 +132,16 @@ async function checkHttp() {
   }
   // 体感模型有 11MB 多：必须放在一个不随版本号变化的缓存里，
   // 否则每次发版 activate 都会清掉它，手机端就得整包重下。
+  //
+  // 路由判断必须是 includes 而不是 startsWith("/vendor/mediapipe/")：
+  // 站点可能部署在子路径下（GitHub Pages 就是 /FLY-NaiLong/），
+  // 按根路径判断的话这条路由永远不命中，等于没有独立缓存。
   record(
     "service worker keeps the pose runtime in a stable cache",
     /MEDIA_CACHE\s*=/.test(swBody) &&
       /k !== MEDIA_CACHE/.test(swBody) &&
-      /startsWith\("\/vendor\/mediapipe\/"\)/.test(swBody),
-    "mediapipe 资源没有独立缓存",
+      /includes\("\/vendor\/mediapipe\/"\)/.test(swBody),
+    "mediapipe 资源没有独立缓存（或路由判断在子路径部署下不成立）",
   );
 
   // The emitted HTML must not leak a placeholder site URL.

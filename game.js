@@ -1568,6 +1568,79 @@
     });
     return poseScript;
   }
+  // ---- 自己先把模型素材拉下来 ---------------------------------------------
+  // MediaPipe 不报下载进度、也不会重试，而这一套素材有 11.6MB，手机网络下常常
+  // 要一分钟以上。原来那个 20 秒硬超时必然把它误判成"加载失败"（中国区访问
+  // github.io 尤其慢）。改成自己下载：
+  //   · 能拿到真实字节进度，进度条不再是假的匀速爬
+  //   · 单个文件失败会自动换源重试（自托管 → jsdelivr）
+  //   · 拉完之后 MediaPipe 直接走 HTTP 缓存，几乎秒回
+  const POSE_ASSETS = [
+    "pose_solution_simd_wasm_bin.js",
+    "pose_solution_simd_wasm_bin.wasm",
+    "pose_solution_packed_assets_loader.js",
+    "pose_solution_packed_assets.data",
+    "pose_landmark_lite.tflite",
+    "pose_web.binarypb",
+  ];
+  async function fetchWithProgress(url, onChunk) {
+    const res = await fetch(url);
+    if (!res.ok) throw Error("HTTP " + res.status);
+    if (!res.body || !res.body.getReader) {
+      await res.arrayBuffer();
+      return;
+    }
+    const reader = res.body.getReader();
+    for (;;) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      onChunk(chunk.value.byteLength);
+    }
+  }
+  async function preloadFromSource(base, onProgress) {
+    let total = 0;
+    const sizes = [];
+    for (const file of POSE_ASSETS) {
+      let size = 0;
+      try {
+        const head = await fetch(base + file, { method: "HEAD" });
+        if (head.ok) size = Number(head.headers.get("content-length")) || 0;
+      } catch {
+        /* 拿不到长度就按 0 算，进度退化成按字节累计 */
+      }
+      sizes.push(size);
+      total += size;
+    }
+    let done = 0;
+    for (let i = 0; i < POSE_ASSETS.length; i++) {
+      await fetchWithProgress(base + POSE_ASSETS[i], (bytes) => {
+        done += bytes;
+        onProgress?.(done, total || done);
+      });
+    }
+  }
+  let poseAssetsPromise = null;
+  function preloadPoseAssets(onProgress) {
+    if (poseAssetsPromise) return poseAssetsPromise;
+    poseAssetsPromise = (async () => {
+      const order = [poseBase, ...POSE_SOURCES.filter((s) => s !== poseBase)];
+      let lastError = null;
+      for (const base of order) {
+        try {
+          await preloadFromSource(base, onProgress);
+          poseBase = base; // 哪个源成功，就让 MediaPipe 去哪个源取
+          return base;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError || Error("模型素材下载失败");
+    })().catch((e) => {
+      poseAssetsPromise = null;
+      throw e;
+    });
+    return poseAssetsPromise;
+  }
   // 后台预热：页面空闲时先把 wasm / 模型拉下来并跑一帧。
   // 这样点「开启摄像头」时基本是秒开，而不是当场下 11.6MB。
   // 走流量的用户（saveData / 2G）直接跳过，不替他们做决定。
@@ -1579,6 +1652,8 @@
       return;
     try {
       await loadPose();
+      if (pose || warmPose) return;
+      await preloadPoseAssets();
       if (pose || warmPose) return;
       const warm = new window.Pose({ locateFile: (f) => poseBase + f });
       warm.setOptions({
@@ -1609,7 +1684,12 @@
     poseLoader.last = now;
     // 没信号时也稳稳往前爬，最多到 92 就压住，把最后一段留给"真的好了"
     poseLoader.auto = Math.min(92, poseLoader.auto + 2.8 * dt);
-    const ceiling = Math.max(poseLoader.floor, poseLoader.auto);
+    // 有真实进度时用它当上限，免得假爬升跑到下载前面去
+    const realPct = poseLoader.real || 0;
+    const ceiling = Math.max(
+      poseLoader.floor,
+      realPct ? Math.min(poseLoader.auto, realPct) : poseLoader.auto,
+    );
     // 加载中：稳稳地爬（有上限、不跳）；收尾时：快速补满，别让玩家盯着空转的条
     const rate = poseLoader.boost ? 110 : 22;
     const ease = poseLoader.boost ? 3 : 1.5;
@@ -1620,12 +1700,14 @@
   }
   function poseLoaderStart() {
     $("poseLoader").hidden = false;
+    $("poseScrim").hidden = false;
     poseLoader.shown = 0;
     poseLoader.floor = 6;
     poseLoader.auto = 0;
     poseLoader.last = 0;
     poseLoader.running = true;
     poseLoader.boost = false;
+    poseLoader.real = 0;
     cancelAnimationFrame(poseLoader.raf);
     poseBar().style.width = "0%";
     poseLoader.raf = requestAnimationFrame(poseLoaderFrame);
@@ -1647,6 +1729,7 @@
     poseLoader.running = false;
     cancelAnimationFrame(poseLoader.raf);
     $("poseLoader").hidden = true;
+    $("poseScrim").hidden = true;
   }
   // 真实工作已经结束，就没必要让玩家继续盯着条慢慢爬：
   // 切到加速模式补满最后一段再收起。
@@ -1702,6 +1785,26 @@
       $("cameraStatus").textContent = "正在加载动作识别…";
       await loadPose();
       poseLoaderGoal(28, "正在下载识别模型，第一次会慢一点…");
+      if (generation !== cameraGeneration) return false;
+      // 自己下素材：有真实进度、失败能换源重试；下完 MediaPipe 直接吃缓存。
+      // 注意这里不设总时限 —— 手机慢就是慢，逼着超时反而一定失败。
+      poseLoader.real = 0;
+      let notedAt = 0;
+      await preloadPoseAssets((loaded, total) => {
+        if (generation !== cameraGeneration) return;
+        const pct = total ? 8 + (loaded / total) * 84 : 0;
+        poseLoader.real = Math.max(poseLoader.real || 0, Math.min(92, pct));
+        if (total && loaded - notedAt > total / 10) {
+          notedAt = loaded;
+          poseLoaderNote(
+            "正在下载识别模型 " +
+              (loaded / 1048576).toFixed(1) +
+              " / " +
+              (total / 1048576).toFixed(1) +
+              " MB",
+          );
+        }
+      });
       if (generation !== cameraGeneration) return false;
       // 后台已经预热过就直接复用，省掉重复下载和 wasm 编译
       const currentPose =
@@ -1770,12 +1873,29 @@
       $("cameraBtn").setAttribute("aria-pressed", "true");
       if (matchMedia("(max-width: 760px)").matches) $("cameraBtn").textContent = "体感已开";
       syncSetupControl();
+      // 下载可能要一分钟以上，这期间 <video> 很容易被浏览器挂起（readyState 变 0），
+      // 这时 send() 会直接抛 wasm abort。所以先等画面真的出帧再启动识别循环。
+      const video = $("cameraPreview");
+      for (let i = 0; i < 80 && (!video.videoWidth || video.readyState < 2); i++) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        if (generation !== cameraGeneration) return false;
+        if (video.paused) await video.play().catch(() => {});
+      }
+      if (!video.videoWidth && generation === cameraGeneration) {
+        poseLoaderNote("摄像头没有画面，正在重试…");
+        try {
+          await video.play();
+        } catch {
+          /* 交给下面的超时兜底 */
+        }
+      }
       const process = async () => {
         if (generation !== cameraGeneration || !s.camera) return;
         try {
           await currentPose.send({ image: $("cameraPreview") });
-        } catch {
+        } catch (sendError) {
           if (generation === cameraGeneration) {
+            window.__poseSendError = String((sendError && sendError.message) || sendError);
             stopCamera();
             resolveFirstResult(false);
             poseLoaderHide();
@@ -1786,12 +1906,14 @@
         if (generation === cameraGeneration) setTimeout(process, 16);
       };
       process();
-      const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 20000));
+      // 素材已经下完了，这里只剩 wasm 编译和首帧推理；20 秒对低端手机太紧，
+      // 放宽到 75 秒，宁可多等也别误判成失败。
+      const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 75000));
       const ready = await Promise.race([firstResult, timeout]);
       if (!ready && generation === cameraGeneration) {
         stopCamera();
         poseLoaderHide();
-        toast("识别模型加载超时，已切换触屏操作");
+        toast("识别还没就绪，可先用触屏／键盘玩");
       }
       return ready;
     } catch (e) {

@@ -425,6 +425,9 @@
       </ul>
       <button class="start-button" id="gotItBtn">懂了，允许起飞 ↗</button>
     </dialog>
+    <!-- 加载识别模型时盖住后面的 3D 场景：半透明的"布"，比直接露着背景好看。
+         注意必须放在 dialog 外面 —— 未打开的 dialog 是 display:none，放里面就永远不显示。 -->
+    <div class="pose-scrim" id="poseScrim" hidden></div>
     <script src="vendor/three.min.js"></script>
     <script src="flight-world.js"></script>
     <script src="game.js"></script>

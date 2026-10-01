@@ -375,7 +375,10 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     (async () => {
       // 体感模型走独立的长驻缓存，其余资源走随版本变化的缓存
-      const isMedia = url.pathname.startsWith("/vendor/mediapipe/");
+      // 必须用 includes 而不是 startsWith：站点可能部署在子路径下
+      // （GitHub Pages 就是 /FLY-NaiLong/），当成根路径判断的话这条路由永远不命中，
+      // 11.6MB 的模型会被塞进随版本号变化的缓存里，每次发版都要重下。
+      const isMedia = url.pathname.includes("/vendor/mediapipe/");
       const cache = await caches.open(isMedia ? MEDIA_CACHE : VERSION);
       const cached = await cache.match(request, { ignoreSearch: true });
       if (cached) return cached;
