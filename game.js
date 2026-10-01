@@ -1574,6 +1574,72 @@
       warmPose = null;
     }
   }
+  // ---- 体感引擎加载条 ----------------------------------------------------
+  // MediaPipe 不报真实进度，所以做成"匀速爬升 + 里程碑只抬高上限"：
+  // 进度条一直在动、速度稳定，不会一下跳到 72% 然后干等半天；
+  // 也不会在真正完成前偷偷跑到 100%。
+  const poseBar = () => $("poseLoaderBar");
+  const poseLoader = { shown: 0, floor: 6, auto: 0, raf: 0, last: 0, running: false };
+  function poseLoaderFrame(now) {
+    const dt = Math.min(0.1, Math.max(0, (now - poseLoader.last) / 1000));
+    poseLoader.last = now;
+    // 没信号时也稳稳往前爬，最多到 92 就压住，把最后一段留给"真的好了"
+    poseLoader.auto = Math.min(92, poseLoader.auto + 2.8 * dt);
+    const ceiling = Math.max(poseLoader.floor, poseLoader.auto);
+    // 加载中：稳稳地爬（有上限、不跳）；收尾时：快速补满，别让玩家盯着空转的条
+    const rate = poseLoader.boost ? 110 : 22;
+    const ease = poseLoader.boost ? 3 : 1.5;
+    const step = Math.min(rate * dt, Math.max(0, ceiling - poseLoader.shown) * ease);
+    poseLoader.shown = Math.min(ceiling, poseLoader.shown + step);
+    poseBar().style.width = poseLoader.shown.toFixed(1) + "%";
+    if (poseLoader.running) poseLoader.raf = requestAnimationFrame(poseLoaderFrame);
+  }
+  function poseLoaderStart() {
+    $("poseLoader").hidden = false;
+    poseLoader.shown = 0;
+    poseLoader.floor = 6;
+    poseLoader.auto = 0;
+    poseLoader.last = 0;
+    poseLoader.running = true;
+    poseLoader.boost = false;
+    cancelAnimationFrame(poseLoader.raf);
+    poseBar().style.width = "0%";
+    poseLoader.raf = requestAnimationFrame(poseLoaderFrame);
+  }
+  // 里程碑只抬高"下限"：进度条不会因此跳一下，而是从新下限继续匀速往上爬。
+  // 真正耗时的 wasm / 模型下载就靠这段匀速爬升来体现。
+  function poseLoaderGoal(value, text) {
+    if (value > poseLoader.floor) {
+      poseLoader.floor = value;
+      poseLoader.auto = Math.max(poseLoader.auto, value);
+    }
+    if (text) $("poseLoaderText").textContent = text;
+  }
+  // 只换文案，不动进度
+  function poseLoaderNote(text) {
+    if (text) $("poseLoaderText").textContent = text;
+  }
+  function poseLoaderHide() {
+    poseLoader.running = false;
+    cancelAnimationFrame(poseLoader.raf);
+    $("poseLoader").hidden = true;
+  }
+  // 真实工作已经结束，就没必要让玩家继续盯着条慢慢爬：
+  // 切到加速模式补满最后一段再收起。
+  function poseLoaderFinish(text) {
+    poseLoaderGoal(100, text);
+    poseLoader.boost = true;
+    const wait = () => {
+      if (!poseLoader.running) return;
+      if (poseLoader.shown >= 99.5) {
+        poseLoaderHide();
+        return;
+      }
+      requestAnimationFrame(wait);
+    };
+    requestAnimationFrame(wait);
+    setTimeout(() => poseLoaderHide(), 2500);
+  }
   let cameraLoadingPromise = null;
   function enableCamera() {
     if (cameraLoadingPromise) return cameraLoadingPromise;
@@ -1587,12 +1653,8 @@
       return false;
     }
     const generation = ++cameraGeneration;
-    const loader = $("poseLoader");
-    const loaderBar = $("poseLoaderBar");
-    const loaderText = $("poseLoaderText");
-    loader.hidden = false;
-    loaderBar.style.width = "8%";
-    loaderText.textContent = "正在申请摄像头权限…";
+    poseLoaderStart();
+    poseLoaderGoal(8, "正在申请摄像头权限…");
     $("cameraView").hidden = false;
     $("cameraStatus").textContent = "正在申请摄像头权限…";
     $("cameraBtn").disabled = true;
@@ -1607,8 +1669,7 @@
         return false;
       }
       stream = incoming;
-      loaderBar.style.width = "28%";
-      loaderText.textContent = "摄像头已连接，正在加载识别模型…";
+      poseLoaderGoal(20, "摄像头已连接，正在准备识别模型…");
       $("cameraPreview").srcObject = stream;
       await $("cameraPreview").play();
       $("setupCameraPreview").srcObject = stream;
@@ -1616,8 +1677,7 @@
       $("setupCameraPreview").play().catch(() => {});
       $("cameraStatus").textContent = "正在加载动作识别…";
       await loadPose();
-      loaderBar.style.width = "72%";
-      loaderText.textContent = "正在初始化动作识别…";
+      poseLoaderGoal(28, "正在下载识别模型，第一次会慢一点…");
       if (generation !== cameraGeneration) return false;
       // 后台已经预热过就直接复用，省掉重复下载和 wasm 编译
       const currentPose =
@@ -1641,9 +1701,7 @@
           $("setupCameraView").dataset.poseReady = "true";
           syncSetupControl();
           resolveFirstResult(true);
-          loaderBar.style.width = "100%";
-          loaderText.textContent = "体感已开启";
-          setTimeout(() => { loader.hidden = true; }, 500);
+          poseLoaderFinish("体感已开启");
         }
         const now = performance.now();
         const text = trackFlap(result.poseLandmarks, now);
@@ -1678,8 +1736,7 @@
           $("cameraStatus").textContent = text;
         }
       });
-      loaderBar.style.width = "92%";
-      loaderText.textContent = "马上就绪…";
+      poseLoaderNote("模型已就位，正在初始化…");
       s.camera = true;
       $("modeText").textContent = "体感模式";
       $("cameraBtn").disabled = false;
@@ -1697,7 +1754,7 @@
           if (generation === cameraGeneration) {
             stopCamera();
             resolveFirstResult(false);
-            loader.hidden = true;
+            poseLoaderHide();
             toast("动作识别暂不可用，请使用键盘 / 触屏");
           }
           return;
@@ -1709,14 +1766,14 @@
       const ready = await Promise.race([firstResult, timeout]);
       if (!ready && generation === cameraGeneration) {
         stopCamera();
-        loader.hidden = true;
+        poseLoaderHide();
         toast("识别模型加载超时，已切换触屏操作");
       }
       return ready;
     } catch (e) {
       if (generation !== cameraGeneration) return false;
       stopCamera();
-      loader.hidden = true;
+      poseLoaderHide();
       toast(
         e.name === "NotAllowedError"
           ? "未获得摄像头权限，可继续使用键盘 / 触屏"

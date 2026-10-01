@@ -452,3 +452,235 @@ body.learning .tutorial button { min-height: 40px; flex-shrink: 0; }
   }
 }
 
+/* ================== 体感引擎加载卡 ==================
+   原来的 .pose-loader 样式只写在 style.css 的 @media (max-width:760px) 里，
+   桌面端加载时完全没有样式。这里补全并统一（本文件最后加载，优先级够）。
+   卡片背景是一只自己做各种小动作的奶龙，配一条匀速爬升的进度条。 */
+.pose-loader {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 42;
+  width: min(304px, 80vw);
+  padding: 14px 18px 15px;
+  border-radius: 20px;
+  background: linear-gradient(#fdf9ea, #fffdf5 52%, #f4f8ee);
+  box-shadow: 0 16px 38px rgba(25, 44, 55, 0.22);
+  text-align: center;
+  color: #28454a;
+}
+.pose-loader[hidden] {
+  display: none;
+}
+.pose-loader strong {
+  display: block;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.pose-loader span {
+  display: block;
+  margin-top: 7px;
+  font-size: 10px;
+  color: #6c8180;
+}
+.pose-loader-track {
+  height: 9px;
+  margin-top: 11px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e4eadc;
+  box-shadow: inset 0 1px 2px rgba(40, 69, 74, 0.08);
+}
+.pose-loader-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffd23f, #ffb326 55%, #ff8a5c);
+}
+/* 进度条上跑一道柔光，让它看起来一直在动 */
+.pose-loader-track i::after {
+  content: "";
+  position: absolute;
+}
+.pose-loader-track {
+  position: relative;
+}
+.pose-loader-track i {
+  position: relative;
+}
+.pose-loader-track i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 45%,
+    transparent 90%
+  );
+  animation: poseShine 1.5s linear infinite;
+}
+@keyframes poseShine {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* ---- 卡片里的奶龙 ---- */
+.loader-dragon {
+  position: relative;
+  width: 120px;
+  height: 100px;
+  margin: 0 auto 10px;
+  animation: dragonAct 7.2s ease-in-out infinite;
+}
+.loader-dragon .dragon-body {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 76px;
+  height: 80px;
+  margin-left: -38px;
+  border-radius: 48% 48% 44% 44% / 52% 52% 46% 46%;
+  background: radial-gradient(120% 112% at 34% 24%, #ffe27a, #ffc21f 58%, #efab00);
+  box-shadow: inset -6px -9px 15px rgba(184, 118, 0, 0.16);
+}
+.loader-dragon .dragon-belly {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 42px;
+  height: 42px;
+  margin-left: -21px;
+  border-radius: 50%;
+  background: #fff4d4;
+}
+.loader-dragon .dragon-eye {
+  position: absolute;
+  top: 19px;
+  width: 15px;
+  height: 17px;
+  border-radius: 50%;
+  background: #2f3a22;
+  overflow: hidden;
+  animation: dragonBlink 3.6s infinite;
+}
+.loader-dragon .dragon-eye.left { left: 13px; }
+.loader-dragon .dragon-eye.right { right: 13px; }
+.loader-dragon .dragon-eye s {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+.loader-dragon .dragon-mouth {
+  position: absolute;
+  left: 50%;
+  top: 41px;
+  width: 16px;
+  height: 8px;
+  margin-left: -8px;
+  border: 2px solid #c98a1f;
+  border-top: 0;
+  border-radius: 0 0 11px 11px;
+}
+.loader-dragon .dragon-arm {
+  position: absolute;
+  top: 42px;
+  width: 17px;
+  height: 28px;
+  border-radius: 10px;
+  background: linear-gradient(#ffd453, #f2b100);
+  transform-origin: 50% 6px;
+}
+.loader-dragon .dragon-arm.left { left: 13px; animation: dragonArmLeft 7.2s ease-in-out infinite; }
+.loader-dragon .dragon-arm.right { right: 13px; animation: dragonArmRight 7.2s ease-in-out infinite; }
+.loader-dragon .dragon-wing {
+  position: absolute;
+  top: 30px;
+  width: 36px;
+  height: 21px;
+  border-radius: 50%;
+  background: #fff0c2;
+  border: 2px solid #f0d99b;
+}
+.loader-dragon .dragon-wing.left { left: 0; transform-origin: 100% 60%; animation: dragonWingLeft 3.4s ease-in-out infinite; }
+.loader-dragon .dragon-wing.right { right: 0; transform-origin: 0% 60%; animation: dragonWingRight 3.4s ease-in-out infinite; }
+.loader-dragon .dragon-foot {
+  position: absolute;
+  bottom: 1px;
+  width: 24px;
+  height: 13px;
+  border-radius: 50%;
+  background: #f5b90d;
+}
+.loader-dragon .dragon-foot.left { left: 19px; }
+.loader-dragon .dragon-foot.right { right: 19px; }
+
+/* 一套动作循环：蹦 → 歪头 → 鼓一下 → 高跳，循环 7.2 秒 */
+@keyframes dragonAct {
+  0%, 8%   { transform: translateY(0) rotate(0deg) scale(1); }
+  16%      { transform: translateY(-12px) rotate(0deg) scale(1.05); }
+  24%      { transform: translateY(0) rotate(0deg) scale(0.98); }
+  32%      { transform: translateY(-3px) rotate(-9deg) scale(1); }
+  40%      { transform: translateY(-3px) rotate(9deg) scale(1); }
+  48%      { transform: translateY(0) rotate(0deg) scale(1); }
+  56%      { transform: translateY(-2px) rotate(0deg) scale(1.08); }
+  64%      { transform: translateY(0) rotate(0deg) scale(0.97); }
+  72%      { transform: translateY(-17px) rotate(0deg) scale(1.02); }
+  80%,100% { transform: translateY(0) rotate(0deg) scale(1); }
+}
+@keyframes dragonBlink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  95%           { transform: scaleY(0.12); }
+}
+@keyframes dragonWingLeft {
+  0%, 100% { transform: rotate(-8deg) scaleX(1); }
+  50%      { transform: rotate(-30deg) scaleX(1.12); }
+}
+@keyframes dragonWingRight {
+  0%, 100% { transform: rotate(8deg) scaleX(1); }
+  50%      { transform: rotate(30deg) scaleX(1.12); }
+}
+@keyframes dragonArmLeft {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(16deg); }
+}
+/* 歪头那一段举起右爪挥三下 */
+@keyframes dragonArmRight {
+  0%, 26%   { transform: rotate(0deg); }
+  32%       { transform: rotate(-122deg); }
+  38%       { transform: rotate(-96deg); }
+  44%       { transform: rotate(-124deg); }
+  50%       { transform: rotate(-98deg); }
+  56%, 100% { transform: rotate(0deg); }
+}
+@media (max-width: 760px) {
+  .pose-loader { top: 47%; width: min(280px, 84vw); padding: 12px 15px 13px; }
+  .loader-dragon { width: 104px; height: 88px; }
+  .loader-dragon .dragon-body { width: 66px; height: 70px; margin-left: -33px; }
+  .loader-dragon .dragon-eye { top: 16px; width: 13px; height: 15px; }
+  .loader-dragon .dragon-eye.left { left: 11px; }
+  .loader-dragon .dragon-eye.right { right: 11px; }
+  .loader-dragon .dragon-belly { width: 36px; height: 36px; margin-left: -18px; }
+  .loader-dragon .dragon-mouth { top: 35px; }
+  .loader-dragon .dragon-arm { top: 36px; height: 24px; }
+  .loader-dragon .dragon-arm.left { left: 10px; }
+  .loader-dragon .dragon-arm.right { right: 10px; }
+  .loader-dragon .dragon-wing { width: 30px; height: 18px; top: 26px; }
+  .loader-dragon .dragon-foot { width: 20px; height: 11px; }
+  .loader-dragon .dragon-foot.left { left: 16px; }
+  .loader-dragon .dragon-foot.right { right: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader-dragon,
+  .loader-dragon .dragon-eye,
+  .loader-dragon .dragon-arm,
+  .loader-dragon .dragon-wing { animation: none; }
+  .pose-loader-track i::after { animation: none; }
+}
+
