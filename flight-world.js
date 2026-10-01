@@ -41,17 +41,24 @@ const WEATHER_PRESETS = [
 ];
 /* 地标主题：换一套就换地面、水体、山脊、建筑配色，以及沿航线出现的地标。
    地标全部用现有的方块 / 球体拼出来，风格和游戏一致，不需要外部模型。 */
+/* 地形的滚动周期：山脉铺两个周期，且形状只取决于 k % 14，
+   所以每次回绕（偏移归零）画面完全一致，循环点看不出来。 */
+const TERRAIN_PERIOD = 14 * 95;
 const SCENE_THEMES = [
   { key: "city", label: "摩天都市",
     ground: "#adc8a1", water: "#7ec7d8", waterWidth: 45, tree: "#7ea982", trees: true,
     palette: ["#d4ded1", "#e9dfc8", "#d5dedf", "#edcda9", "#b2c9ba"],
     roads: true, blocks: true, wall: false, mountains: 14, mountainSpread: 420,
     rock: "#8db3a6", rockAlt: "#a2c4b8",
+    build: { minH: 10, maxH: 56, minW: 16, wVar: 12, tall: 0.5, roof: "unit" },
     landmarks: ["tower", "eiffel"] },
   { key: "wall", label: "长城",
     ground: "#a8b483", water: null, tree: "#6f8f5f", trees: false,
     palette: ["#c9c3a6", "#bdb596", "#d3ccb0", "#b5ac8c", "#c6bfa2"],
     roads: false, blocks: false, wall: true, wallColor: "#b9ae94", wallTop: "#a89d84",
+    // blocks 关掉了，但 cityUpdate 的循环照跑（只是不可见），所以必须也有 build，
+    // 否则 theme.build 是 undefined，会直接抛异常把整个渲染循环打断。
+    build: { minH: 8, maxH: 30, minW: 18, wVar: 12, tall: 0.3, roof: "unit" },
     mountains: 34, mountainSpread: 150,
     rock: "#8fa07a", rockAlt: "#9db08a",
     landmarks: ["watchtower", "watchtower", "bigben"] },
@@ -60,12 +67,16 @@ const SCENE_THEMES = [
     palette: ["#cbb79c", "#dcc7a6", "#b9a894", "#e0d2b6", "#a9b3a5"],
     roads: true, blocks: true, wall: false, mountains: 6, mountainSpread: 520,
     rock: "#8aa39a", rockAlt: "#9db5ac",
+    // 伦敦：低而宽的联排房 + 烟囱，天际线压得低，泰晤士河才显得开阔
+    build: { minH: 8, maxH: 28, minW: 23, wVar: 14, tall: 0.2, roof: "chimney" },
     landmarks: ["bigben", "eye", "towerbridge"] },
   { key: "sydney", label: "悉尼",
     ground: "#b6c6a8", water: "#5fb4cf", waterWidth: 78, tree: "#7fae7a", trees: true,
     palette: ["#e2e0d4", "#cfd6d2", "#e8dcc4", "#c3ccc9", "#dcd3c0"],
     roads: true, blocks: true, wall: false, mountains: 5, mountainSpread: 560,
     rock: "#93b0a4", rockAlt: "#a6c2b6",
+    // 悉尼：高瘦的玻璃塔 + 楼顶桅杆，天际线拔高
+    build: { minH: 14, maxH: 66, minW: 15, wVar: 13, tall: 0.62, roof: "mast" },
     landmarks: ["opera", "harbourbridge", "tower"] },
 ];
 /* A single 3D scene owns the character, particles, targets and collision visuals. */
@@ -416,6 +427,27 @@ class FlightWorld {
     this.city.add(this.buildings);
     this.windows = new T.InstancedMesh(this.box, this.mat("#e4f4ea"), 230 * 6);
     this.city.add(this.windows);
+    // 压顶（楼顶那圈浅色薄板）：主要作用是把轮廓勾清楚，比纯方块"精致"很多
+    this.caps = new T.InstancedMesh(
+      this.box,
+      new T.MeshStandardMaterial({ roughness: 0.8 }),
+      230,
+    );
+    this.city.add(this.caps);
+    // 高楼退台：天际线不至于全是等宽方柱
+    this.tiers = new T.InstancedMesh(
+      this.box,
+      new T.MeshStandardMaterial({ roughness: 0.82 }),
+      230,
+    );
+    this.city.add(this.tiers);
+    // 楼顶细节：桅杆 / 烟囱 / 设备房
+    this.roofs = new T.InstancedMesh(
+      new T.ConeGeometry(1, 1, 6),
+      new T.MeshStandardMaterial({ roughness: 0.7 }),
+      230,
+    );
+    this.city.add(this.roofs);
     this.trees = new T.InstancedMesh(
       new T.ConeGeometry(3, 11, 7),
       this.mat("#7ea982"),
@@ -429,8 +461,12 @@ class FlightWorld {
         this.block(this.city, "#e5d9b8", 0, 0.05, -i * 120, 1500, 0.1, 9),
       );
     // 随主题重建的部分（水体 / 山脊 / 长城）单独放一组，换主题时整组清掉
+    // 山脊 / 水体 / 长城单独放一组，挂在场景根上而不是 city 组里。
+    // city 是靠 position.z = distance - cz*48 这种锯齿滚动的（建筑本身 48 周期，
+    // 所以看不出跳）；地形不是 48 周期，跟着它就会每 48 单位抖一下 —— 飞行时
+    // 约 0.58 秒一次，就是"画面跳变"的来源。这里改成按地形自己的周期无缝滚动。
     this.terrain = new T.Group();
-    this.city.add(this.terrain);
+    this.scene.add(this.terrain);
     this.river = null;
     this.mountains = [];
     this.landmarks = [];
@@ -458,32 +494,39 @@ class FlightWorld {
     this.windows.visible = theme.blocks;
     this.roads.forEach((r) => (r.visible = theme.roads !== false));
     if (theme.water) {
+      // 要盖住"地形偏移 + 雾距"的整段可视范围，短了会看见河尽头
       this.river = this.block(
-        this.terrain, theme.water, 0, -0.5, -260, theme.waterWidth || 45, 1, 1300,
+        this.terrain, theme.water, 0, -0.5, -1100, theme.waterWidth || 45, 1, 3200,
       );
     } else this.river = null;
-    for (let k = 0; k < theme.mountains; k++) {
-      const m = new T.Mesh(
-        new T.ConeGeometry(100 + (k % 3) * 44, 100 + (k % 4) * 30, 5),
-        this.mat(k % 2 ? theme.rock : theme.rockAlt),
+    // 山脊按 TERRAIN_PERIOD 精确铺两个周期：滚动到下一个周期时画面完全一致，
+    // 所以循环点看不出来。形状只取决于 k % PER_MOUNTAINS，保证真的周期。
+    const PER_MOUNTAINS = 14;
+    const gap = theme.key === "wall" ? 62 : 95;
+    const count = Math.max(PER_MOUNTAINS, theme.mountains) * 2;
+    for (let k = 0; k < count; k++) {
+      const m = k % PER_MOUNTAINS;
+      const rock = new T.Mesh(
+        new T.ConeGeometry(100 + (m % 3) * 44, 100 + (m % 4) * 30, 5),
+        this.mat(m % 2 ? theme.rock : theme.rockAlt),
       );
-      m.position.set(
-        (k % 2 ? 1 : -1) * (theme.mountainSpread + (k % 3) * 52),
+      rock.position.set(
+        (m % 2 ? 1 : -1) * (theme.mountainSpread + (m % 3) * 52),
         20,
-        -k * (theme.key === "wall" ? 62 : 95),
+        -k * gap,
       );
-      this.terrain.add(m);
-      this.mountains.push(m);
+      this.terrain.add(rock);
+      this.mountains.push(rock);
     }
     if (theme.wall) {
       for (const side of [-1, 1]) {
         const x = side * 78;
         // 墙体分两段收分，看起来是垒起来的石墙而不是一块板
-        this.block(this.terrain, theme.wallColor, x, 11, -300, 26, 22, 1000);
-        this.block(this.terrain, theme.wallTop, x, 26, -300, 19, 9, 1000);
-        this.block(this.terrain, theme.wallColor, x, 34, -300, 24, 7, 1000);
+        this.block(this.terrain, theme.wallColor, x, 11, -1100, 26, 22, 3200);
+        this.block(this.terrain, theme.wallTop, x, 26, -1100, 19, 9, 3200);
+        this.block(this.terrain, theme.wallColor, x, 34, -1100, 24, 7, 3200);
         // 密集垛口（内外两侧都要，飞过去才有连续的齿）
-        for (let k = 0; k < 42; k++) {
+        for (let k = 0; k < 130; k++) {
           const z = 40 - k * 24;
           this.block(this.terrain, theme.wallTop, x - 9, 40, z, 5, 7, 11);
           this.block(this.terrain, theme.wallTop, x + 9, 40, z, 5, 7, 11);
@@ -579,6 +622,11 @@ class FlightWorld {
       box("#b9ae94", 0, 8, 21, 14, 16, 26);
     }
     return g;
+  }
+
+  /** 地形按自己的周期滚动，和 city 的 48 锯齿解耦，这样山脊不会一格一跳。 */
+  terrainUpdate(s) {
+    this.terrain.position.z = s.distance % TERRAIN_PERIOD;
   }
 
   /** 地标沿航线周期性出现，越过头顶就绕到最远处（和云的回收方式一致）。 */
@@ -722,6 +770,22 @@ class FlightWorld {
     }
     this.lineGeometry.attributes.position.needsUpdate = true;
   }
+  /**
+   * 建筑参数。渲染（cityUpdate）和碰撞（buildingHit）都调这里，
+   * 免得两处算法各写一遍、改动之后走偏（走偏了就会出现看不见的墙）。
+   */
+  buildingSpec(theme, row, col, cz, cx, originX) {
+    const b = theme.build || { minH: 8, maxH: 44, minW: 16, wVar: 12, tall: 0.4, roof: "unit" };
+    const seed = Math.abs(Math.sin((row + cz - 2) * 37.13 + (col + cx - 5) * 91.7));
+    const seed2 = Math.abs(Math.sin((row + cz) * 12.9898 + (col + cx) * 78.233)) % 1;
+    const bx = (col - 5) * 48;
+    const tall = seed2 > 1 - b.tall;
+    const height = b.minH + seed * (b.maxH - b.minH) * (tall ? 1 : 0.55);
+    const width = Math.abs(bx + originX) < 36 ? 0 : b.minW + seed2 * b.wVar;
+    const tier = Boolean(width && tall && height > b.minH + (b.maxH - b.minH) * 0.55);
+    return { seed, seed2, bx, tall, height, width, tier, top: height + (tier ? 16 : 0) };
+  }
+
   cityUpdate(s) {
     const cx = Math.floor(s.x / 48),
       cz = Math.floor(s.distance / 48);
@@ -735,23 +799,49 @@ class FlightWorld {
     let index = 0,
       wi = 0;
     const obj = this.matrix,
-      color = new THREE.Color();
+      color = new THREE.Color(),
+      capColor = new THREE.Color();
+    const theme = SCENE_THEMES[this.sceneTheme] || SCENE_THEMES[0];
+    const palette = theme.palette;
     for (let row = 0; row < 23; row++)
       for (let col = 0; col < 10; col++) {
-        const seed = Math.abs(
-          Math.sin((row + cz - 2) * 37.13 + (col + cx - 5) * 91.7),
-        );
-        const x = (col - 5) * 48,
-          z = (2 - row) * 48;
-        const height = 8 + seed * 46,
-          bw = Math.abs(x + cx * 48) < 36 ? 0 : 16 + seed * 12;
+        const spec = this.buildingSpec(theme, row, col, cz, cx, cx * 48);
+        const x = spec.bx,
+          z = (2 - row) * 48,
+          bw = spec.width,
+          height = spec.height;
         obj.position.set(x, height / 2, z);
         obj.scale.set(bw, bw ? height : 0, bw);
         obj.updateMatrix();
         this.buildings.setMatrixAt(index, obj.matrix);
-        const palette = (SCENE_THEMES[this.sceneTheme] || SCENE_THEMES[0]).palette;
-        color.set(palette[Math.floor(seed * palette.length) % palette.length]);
-        this.buildings.setColorAt(index++, color);
+        color.set(palette[Math.floor(spec.seed * palette.length) % palette.length]);
+        this.buildings.setColorAt(index, color);
+        // 压顶：比楼身略宽一点点的浅色薄板
+        obj.position.set(x, height + 1.3, z);
+        obj.scale.set(bw ? bw + 1.8 : 0, bw ? 2.6 : 0, bw ? bw + 1.8 : 0);
+        obj.updateMatrix();
+        this.caps.setMatrixAt(index, obj.matrix);
+        capColor.copy(color).offsetHSL(0, -0.05, 0.1);
+        this.caps.setColorAt(index, capColor);
+        // 退台
+        obj.position.set(x, height + (spec.tier ? 8 : -999), z);
+        obj.scale.set(spec.tier ? bw * 0.6 : 0, spec.tier ? 16 : 0, spec.tier ? bw * 0.6 : 0);
+        obj.updateMatrix();
+        this.tiers.setMatrixAt(index, obj.matrix);
+        this.tiers.setColorAt(index, color);
+        // 楼顶细节：悉尼用细桅杆，伦敦用矮烟囱，都市用设备房
+        const kind = (theme.build || {}).roof || "unit";
+        const rh = kind === "mast" ? 22 + spec.seed2 * 18 : kind === "chimney" ? 5 : 4;
+        const rw = kind === "mast" ? 1.4 : kind === "chimney" ? 3.6 : 6;
+        obj.position.set(
+          x + (spec.seed - 0.5) * bw * 0.35,
+          height + (spec.tier ? 16 : 2) + rh / 2,
+          z + (spec.seed2 - 0.5) * bw * 0.3,
+        );
+        obj.scale.set(bw ? rw : 0, bw ? rh : 0, bw ? rw : 0);
+        obj.updateMatrix();
+        this.roofs.setMatrixAt(index, obj.matrix);
+        index++;
         for (let j = 0; j < 6; j++) {
           obj.position.set(
             x + ((j % 3) - 1) * bw * 0.27,
@@ -779,6 +869,11 @@ class FlightWorld {
     }
     this.buildings.instanceMatrix.needsUpdate = true;
     this.buildings.instanceColor.needsUpdate = true;
+    this.caps.instanceMatrix.needsUpdate = true;
+    this.caps.instanceColor.needsUpdate = true;
+    this.tiers.instanceMatrix.needsUpdate = true;
+    this.tiers.instanceColor.needsUpdate = true;
+    this.roofs.instanceMatrix.needsUpdate = true;
     this.windows.instanceMatrix.needsUpdate = true;
     this.trees.instanceMatrix.needsUpdate = true;
     this.roads.forEach(
@@ -794,7 +889,9 @@ class FlightWorld {
    * that slides past, so "distance" is measured in the city's local frame.
    */
   buildingHit(x, altitude, distance, radius = 5) {
-    if (altitude - radius > 54) return false; // clears the tallest tower
+    const theme = SCENE_THEMES[this.sceneTheme] || SCENE_THEMES[0];
+    const b = theme.build || { maxH: 44 };
+    if (altitude - radius > b.maxH + 16) return false; // 高过最高塔（含退台）
     const cx = Math.floor(x / 48),
       cz = Math.floor(distance / 48);
     const originX = cx * 48,
@@ -807,16 +904,14 @@ class FlightWorld {
       for (let col = 0; col <= 9; col++) {
         const bx = (col - 5) * 48;
         const worldX = originX + bx;
-        if (Math.abs(worldX - x) > 16 + radius) continue;
-        const seed = Math.abs(
-          Math.sin((row + cz - 2) * 37.13 + (col + cx - 5) * 91.7),
-        );
-        const width = Math.abs(bx + originX) < 36 ? 0 : 16 + seed * 12;
-        if (!width) continue; // the river corridor stays clear
-        if (altitude - radius >= 8 + seed * 46) continue; // flying over the roof
+        if (Math.abs(worldX - x) > 24 + radius) continue;
+        // 和 cityUpdate 用同一个函数算参数，两边永远不会走偏
+        const spec = this.buildingSpec(theme, row, col, cz, cx, originX);
+        if (!spec.width) continue; // the river corridor stays clear
+        if (altitude - radius >= spec.top) continue; // flying over the roof
         if (
-          Math.abs(worldX - x) < width / 2 + radius &&
-          Math.abs(worldZ) < width / 2 + radius
+          Math.abs(worldX - x) < spec.width / 2 + radius &&
+          Math.abs(worldZ) < spec.width / 2 + radius
         )
           return true;
       }
@@ -1296,6 +1391,7 @@ class FlightWorld {
     this.cityUpdate(s);
     this.cloudUpdate(s);
     this.landmarkUpdate(s);
+    this.terrainUpdate(s);
     // The pursuer is driven entirely from game state: the chase object holds
     // his absolute position, render() only mirrors it into the scene.
     const chase = s.chase;

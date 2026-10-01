@@ -113,6 +113,8 @@
       marksVisible: world.landmarks ? world.landmarks.filter((g) => g.visible).length : -1,
       markZ: world.landmarks && world.landmarks[0] ? Math.round(world.landmarks[0].position.z) : null,
       markX: world.landmarks && world.landmarks[0] ? Math.round(world.landmarks[0].position.x) : null,
+      terrainZ: Number((world.terrain ? world.terrain.position.z : 0).toFixed(2)),
+      cityZ: Number((world.city ? world.city.position.z : 0).toFixed(2)),
       step: world.weatherStep,
       queue: world.weatherQueue.length,
       mode: s.mode,
