@@ -130,6 +130,15 @@ async function checkHttp() {
     }
     record(`all ${urls.length} precached URLs resolve`, missing.length === 0, missing.join(", "));
   }
+  // 体感模型有 11MB 多：必须放在一个不随版本号变化的缓存里，
+  // 否则每次发版 activate 都会清掉它，手机端就得整包重下。
+  record(
+    "service worker keeps the pose runtime in a stable cache",
+    /MEDIA_CACHE\s*=/.test(swBody) &&
+      /k !== MEDIA_CACHE/.test(swBody) &&
+      /startsWith\("\/vendor\/mediapipe\/"\)/.test(swBody),
+    "mediapipe 资源没有独立缓存",
+  );
 
   // The emitted HTML must not leak a placeholder site URL.
   record("no unconfigured placeholder domain in index", !/example\.com/.test(html));

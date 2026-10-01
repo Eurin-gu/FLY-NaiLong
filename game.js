@@ -1544,6 +1544,36 @@
     });
     return poseScript;
   }
+  // 后台预热：页面空闲时先把 wasm / 模型拉下来并跑一帧。
+  // 这样点「开启摄像头」时基本是秒开，而不是当场下 11.6MB。
+  // 走流量的用户（saveData / 2G）直接跳过，不替他们做决定。
+  let warmPose = null;
+  async function warmUpPose() {
+    if (pose || warmPose || !navigator.onLine) return;
+    const conn = navigator.connection;
+    if (conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || "")))
+      return;
+    try {
+      await loadPose();
+      if (pose || warmPose) return;
+      const warm = new window.Pose({ locateFile: (f) => poseBase + f });
+      warm.setOptions({
+        modelComplexity: 0,
+        smoothLandmarks: true,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6,
+      });
+      warm.onResults(() => {});
+      // 真正触发 wasm / 模型下载的是 send()，所以喂一帧空白图
+      const blank = document.createElement("canvas");
+      blank.width = 64;
+      blank.height = 64;
+      await warm.send({ image: blank });
+      warmPose = warm;
+    } catch {
+      warmPose = null;
+    }
+  }
   let cameraLoadingPromise = null;
   function enableCamera() {
     if (cameraLoadingPromise) return cameraLoadingPromise;
@@ -1589,9 +1619,10 @@
       loaderBar.style.width = "72%";
       loaderText.textContent = "正在初始化动作识别…";
       if (generation !== cameraGeneration) return false;
-      const currentPose = new window.Pose({
-        locateFile: (f) => poseBase + f,
-      });
+      // 后台已经预热过就直接复用，省掉重复下载和 wasm 编译
+      const currentPose =
+        warmPose || new window.Pose({ locateFile: (f) => poseBase + f });
+      warmPose = null;
       pose = currentPose;
       currentPose.setOptions({
         modelComplexity: 0,
@@ -1697,4 +1728,8 @@
   $("cameraBtn").addEventListener("click", enableCamera);
   $("keyboardBtn").addEventListener("click", stopCamera);
   window.addEventListener("pagehide", stopCamera);
+  // 首屏渲染完、浏览器空闲了再开始预热，不跟首屏抢带宽
+  if ("requestIdleCallback" in window)
+    requestIdleCallback(() => warmUpPose(), { timeout: 8000 });
+  else setTimeout(() => warmUpPose(), 4000);
 })();

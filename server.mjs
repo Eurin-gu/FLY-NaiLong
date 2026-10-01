@@ -55,6 +55,8 @@ const MIME = {
 };
 const COMPRESSIBLE = new Set([
   ".html", ".js", ".mjs", ".css", ".json", ".webmanifest", ".txt", ".xml", ".svg",
+  // 体感模型的 wasm / 模型 / 数据包也能压掉三到五成；不压的话手机端要多下好几 MB。
+  ".wasm", ".data", ".tflite", ".binarypb",
 ]);
 
 if (!fs.existsSync(path.join(DIST, "index.html"))) {
