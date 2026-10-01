@@ -19,6 +19,13 @@ const WEATHER_PRESETS = [
     sunColor: "#b9c6d8", sunPower: 1.1, sunDir: [-90, 60, -80],
     cloudColor: "#6d7787", discColor: "#cfd8e6", disc: 0, discSize: 90,
     stars: 0, rain: 1, rainSpeed: 120, rainLen: 6.5, rainDrift: 6, rainColor: "#e2efff", lightning: 0.55 },
+  { key: "rainbow", label: "彩虹",
+    skyTop: "#3f8fd8", skyBottom: "#e2f2f7", fogColor: "#dcf0f4", fogNear: 200, fogFar: 720,
+    hemiSky: "#f8feff", hemiGround: "#8fae7e", hemiPower: 2.6,
+    sunColor: "#fff6d6", sunPower: 3.4, sunDir: [-130, 48, -170],
+    cloudColor: "#ffffff", discColor: "#fff3cf", disc: 0.7, discSize: 110,
+    stars: 0, rain: 0, rainSpeed: 0, rainLen: 0, rainDrift: 0, rainColor: "#cfe6ff",
+    lightning: 0, rainbow: 1 },
   { key: "night", label: "星夜",
     skyTop: "#081129", skyBottom: "#2b3f68", fogColor: "#22304f", fogNear: 150, fogFar: 620,
     hemiSky: "#8fa6d8", hemiGround: "#2a3348", hemiPower: 1.1,
@@ -335,18 +342,30 @@ class FlightWorld {
       }
       spike.position.set(0,y,-radius*.79-.035);spike.rotation.x=-Math.PI/2;dragon.add(spike);
     }
-    // 一对小翅膀。奶龙本体原本没有翅膀，补上之后背对镜头飞行时一眼能看出来。
-    // 三片羽瓣由内到外变小、颜色比身体浅，免得糊成一团。
+    // 一对翅膀。奶龙本体原本没有翅膀，补上之后背对镜头飞行时一眼能看出来。
+    // 做成 根 → 中段 → 翼尖 三层嵌套：上层转动时下层可以滞后一拍再追上，
+    // 扇起来才有"甩"的韧性，而不是一块硬板子在摆。五片羽瓣由内到外变小。
     this.wings = [];
     const wingSkin = new T.MeshStandardMaterial({ color: '#fff1c2', roughness: .58 });
     const wingTip = new T.MeshStandardMaterial({ color: '#f6d68a', roughness: .66 });
+    const wingEdge = new T.MeshStandardMaterial({ color: '#ffe9a8', roughness: .62 });
     for (const side of [-1, 1]) {
       const wing = new T.Group();
       wing.position.set(side * .84, .42, -.62);   // 肩后，根部略埋进身体
       dragon.add(wing);
-      oval(wing, wingSkin, [side * .45, .02, .04], [.74, .32, .26]);
-      oval(wing, wingTip, [side * 1.06, .13, .01], [.62, .27, .22]);
-      oval(wing, wingSkin, [side * 1.58, .25, -.03], [.44, .21, .17]);
+      const mid = new T.Group();
+      mid.position.set(side * .85, .06, 0);
+      wing.add(mid);
+      const tip = new T.Group();
+      tip.position.set(side * .85, .08, -.02);
+      mid.add(tip);
+      oval(wing, wingSkin, [side * .42, .02, .04], [.76, .33, .27]);
+      oval(mid, wingSkin, [side * .06, .03, .02], [.56, .30, .24]);
+      oval(mid, wingTip, [side * .62, .14, -.01], [.52, .25, .21]);
+      oval(tip, wingEdge, [side * .18, .12, -.02], [.46, .22, .18]);
+      oval(tip, wingSkin, [side * .74, .24, -.04], [.36, .17, .14]);
+      wing.userData.mid = mid;
+      wing.userData.tip = tip;
       this.wings.push(wing);
     }
     return dragon;
@@ -710,9 +729,29 @@ class FlightWorld {
     this.rain.frustumCulled = false;
     this.scene.add(this.rain);
 
+    // 雨后彩虹：七个同心半环，摆在前方远处，正对镜头
+    this.rainbowGroup = new T.Group();
+    ["#ff5f6d", "#ffa03e", "#ffe45c", "#69d16f", "#5cc6f0", "#7d8bf0", "#b07bea"].forEach(
+      (color, i) => {
+        const band = new T.Mesh(
+          new T.TorusGeometry(168 + i * 13, 6.5, 6, 72, Math.PI),
+          new T.MeshBasicMaterial({
+            color, transparent: true, opacity: 0, depthWrite: false, fog: false,
+          }),
+        );
+        this.rainbowGroup.add(band);
+      },
+    );
+    this.rainbowGroup.visible = false;
+    this.scene.add(this.rainbowGroup);
+
     this.weather = null;
     this.weatherTarget = null;
     this.weatherIndex = -1;
+    this.weatherQueue = [];
+    this.weatherStep = 0;
+    this.weatherHold = 0;
+    this.onWeatherChange = null;
     this.flash = 0;
     this.nextBolt = 3;
     this.onLightning = null;
@@ -743,6 +782,7 @@ class FlightWorld {
       rainDrift: preset.rainDrift,
       rainColor: new T.Color(preset.rainColor),
       lightning: preset.lightning,
+      rainbow: preset.rainbow || 0,
     };
   }
 
@@ -755,7 +795,25 @@ class FlightWorld {
     return preset;
   }
 
+  /* 一局之内的天气推进。顺序是「晴 → 雷雨 → 彩虹 → 落日 → 星夜 → 飘雪」，
+     每 weatherHold 秒换一次，所以飞得越久看到的天气越多。
+     每套之间是插值过渡，不会有硬切。 */
+  startWeatherRun() {
+    const order = ["clear", "storm", "rainbow", "sunset", "night", "snow"];
+    this.weatherQueue = order
+      .map((key) => WEATHER_PRESETS.findIndex((p) => p.key === key))
+      .filter((i) => i >= 0);
+    this.weatherStep = 0;
+    this.weatherHold = 24;
+    return this.setWeather(this.weatherQueue[0], true);
+  }
+
   cycleWeather() {
+    if (this.weatherQueue.length) {
+      this.weatherStep = (this.weatherStep + 1) % this.weatherQueue.length;
+      this.weatherHold = 24;
+      return this.setWeather(this.weatherQueue[this.weatherStep]);
+    }
     return this.setWeather(this.weatherIndex + 1);
   }
 
@@ -787,6 +845,19 @@ class FlightWorld {
 
   updateWeather(s, dt) {
     if (!this.weather) this.setWeather(0, true);
+
+    // 一局之内按时间推进天气
+    if (this.weatherHold > 0 && s.mode === "running" && !s.calibrating) {
+      this.weatherHold -= dt;
+      if (this.weatherHold <= 0) {
+        const total = Math.max(1, this.weatherQueue.length);
+        this.weatherStep = (this.weatherStep + 1) % total;
+        const preset = this.setWeather(this.weatherQueue[this.weatherStep]);
+        this.weatherHold = 24;
+        if (this.onWeatherChange) this.onWeatherChange(preset);
+      }
+    }
+
     const cur = this.weather, tgt = this.weatherTarget;
     const k = this.reducedMotion ? 1 : 1 - Math.exp(-dt * 0.9);
     for (const key of ["skyTop", "skyBottom", "fogColor", "hemiSky", "hemiGround",
@@ -794,7 +865,7 @@ class FlightWorld {
       cur[key].lerp(tgt[key], k);
     }
     for (const key of ["fogNear", "fogFar", "hemiPower", "sunPower", "disc", "discSize",
-      "stars", "rain", "rainSpeed", "rainLen", "rainDrift", "lightning"]) {
+      "stars", "rain", "rainSpeed", "rainLen", "rainDrift", "lightning", "rainbow"]) {
       cur[key] += (tgt[key] - cur[key]) * k;
     }
     cur.sunDir.lerp(tgt.sunDir, k).normalize();
@@ -832,6 +903,15 @@ class FlightWorld {
     this.sunSprite.material.opacity = cur.disc;
     this.sunSprite.scale.setScalar(cur.discSize);
     this.sunSprite.visible = cur.disc > 0.02;
+
+    // 彩虹
+    this.rainbowGroup.visible = cur.rainbow > 0.02;
+    if (this.rainbowGroup.visible) {
+      this.rainbowGroup.position.set(s.x, s.altitude + 22, -860);
+      for (const band of this.rainbowGroup.children) {
+        band.material.opacity = cur.rainbow * 0.6;
+      }
+    }
 
     // 降水
     this.rain.visible = cur.rain > 0.02;
@@ -1123,7 +1203,7 @@ class FlightWorld {
       else if (name === "stretch") stretchK = env;
     }
 
-    // ---- 翅膀：两个频率叠加 + 平滑追赶，扇起来有惯性，不像节拍器 ----
+    // ---- 翅膀：多频率叠加 + 平滑追赶 + 末端滞后，扇起来有惯性也有韧性 ----
     if (!this.wingAngle) {
       this.wingAngle = [0, 0];
       this.wingSweep = [0, 0];
@@ -1132,26 +1212,37 @@ class FlightWorld {
     this.wings.forEach((wing, i) => {
       const side = i === 0 ? -1 : 1;
       const phase = wingBeat + i * 0.55;
-      const swing = Math.sin(phase) * 0.46 + Math.sin(phase * 0.43 + i * 1.7) * 0.17;
+      const swing =
+        Math.sin(phase) * 0.5 +
+        Math.sin(phase * 0.43 + i * 1.7) * 0.19 +
+        Math.sin(phase * 2.7 + i) * 0.05;
       let targetZ, targetY, targetX;
       if (pumping) {
-        targetZ = 0.26 + swing;
-        targetY = 0.30 + Math.sin(phase + 1.1) * 0.34;
-        targetX = Math.sin(phase * 0.8 + i * 2.1) * 0.24;
+        targetZ = 0.28 + swing;
+        targetY = 0.30 + Math.sin(phase + 1.1) * 0.36;
+        targetX = Math.sin(phase * 0.8 + i * 2.1) * 0.26;
       } else {
         // 待机：微微上扬 + 慢呼吸 + 一点小抖；展翅动作时高高张开
-        const breathe = Math.sin(s.time * 2.6 + i * 1.1) * 0.20;
-        const jitter = Math.sin(s.time * 5.1 + i * 2.3) * 0.06;
-        targetZ = 0.32 + breathe + jitter + stretchK * 0.6;
-        targetY = 0.50 - stretchK * 0.42 + Math.sin(s.time * 1.7 + i) * 0.12;
-        targetX = Math.sin(s.time * 1.9 + i * 2.4) * 0.10 - stretchK * 0.12;
+        const breathe = Math.sin(s.time * 2.6 + i * 1.1) * 0.22;
+        const jitter = Math.sin(s.time * 5.1 + i * 2.3) * 0.08;
+        targetZ = 0.34 + breathe + jitter + stretchK * 0.6;
+        targetY = 0.50 - stretchK * 0.42 + Math.sin(s.time * 1.7 + i) * 0.14;
+        targetX = Math.sin(s.time * 1.9 + i * 2.4) * 0.12 - stretchK * 0.12;
       }
       const k = 1 - Math.exp(-visualDt * (pumping ? 22 : 9));
       this.wingAngle[i] += (targetZ - this.wingAngle[i]) * k;
       this.wingSweep[i] += (targetY - this.wingSweep[i]) * k;
+      // 还没追上的差值就代表当前转速：中段和翼尖按它反向滞后，形成鞭甩
+      const remain = targetZ - this.wingAngle[i];
+      const whip = Math.max(-0.45, Math.min(0.45, remain * 0.9));
       wing.rotation.z = side * this.wingAngle[i];
       wing.rotation.y = side * this.wingSweep[i];
       wing.rotation.x = targetX;
+      const mid = wing.userData.mid, tip = wing.userData.tip;
+      if (mid) mid.rotation.z = -side * whip * 0.55;
+      if (tip)
+        tip.rotation.z =
+          -side * whip * 1.05 + side * Math.sin(phase * 1.7 + i) * 0.06;
     });
 
     // ---- 手臂 / 头：待机放松、挥手、展翅 ----

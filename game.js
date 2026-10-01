@@ -100,11 +100,18 @@
     world = new FlightWorld(canvas);
     // 闪电时打一声低沉的雷
     world.onLightning = () => beep(64);
+    // 一局之内换天气时提示一下
+    world.onWeatherChange = (preset) => toast("天气变了 · " + preset.label);
     // 调试/自检用的小钩子：读当前天气与闪电强度
     window.__nailong = () => ({
       weather: world.weatherLabel,
       flash: Number((world.flash || 0).toFixed(3)),
       rain: world.weather ? Number(world.weather.rain.toFixed(2)) : 0,
+      hold: Number((world.weatherHold || 0).toFixed(1)),
+      step: world.weatherStep,
+      queue: world.weatherQueue.length,
+      mode: s.mode,
+      calibrating: Boolean(s.calibrating),
     });
   } catch (error) {
     console.error("3D 初始化失败", error);
@@ -370,9 +377,8 @@
     radioTime = 0;
     radioIndex = 0;
     world.reset();
-    // 每开一局换一种天气（第一局保持晴空，和待机大厅一致）
-    if (runsStarted > 0) world.cycleWeather();
-    runsStarted += 1;
+    // 每一局都从晴空开始，之后按 晴 → 雷雨 → 彩虹 → 落日 → 星夜 → 飘雪 推进
+    world.startWeatherRun();
     $("gameOverlay").hidden = true;
     $("radio").hidden = true;
     $("pauseBtn").disabled = false;
@@ -1047,8 +1053,6 @@
   requestAnimationFrame(loop);
   hud();
   let launching = false;
-  // 已开局的次数，用来决定这一局的天气（第一局保持晴空）
-  let runsStarted = 0;
   $("changeModeBtn").addEventListener("click", () => {
     if (!launching) showModeStep();
   });
