@@ -39,6 +39,35 @@ const WEATHER_PRESETS = [
     cloudColor: "#eef4fa", discColor: "#ffffff", disc: 0.2, discSize: 90,
     stars: 0, rain: 1, rainSpeed: 16, rainLen: 0.8, rainDrift: 5, rainColor: "#ffffff", lightning: 0 },
 ];
+/* 地标主题：换一套就换地面、水体、山脊、建筑配色，以及沿航线出现的地标。
+   地标全部用现有的方块 / 球体拼出来，风格和游戏一致，不需要外部模型。 */
+const SCENE_THEMES = [
+  { key: "city", label: "摩天都市",
+    ground: "#adc8a1", water: "#7ec7d8", waterWidth: 45, tree: "#7ea982", trees: true,
+    palette: ["#d4ded1", "#e9dfc8", "#d5dedf", "#edcda9", "#b2c9ba"],
+    roads: true, blocks: true, wall: false, mountains: 14, mountainSpread: 420,
+    rock: "#8db3a6", rockAlt: "#a2c4b8",
+    landmarks: ["tower", "eiffel"] },
+  { key: "wall", label: "长城",
+    ground: "#a8b483", water: null, tree: "#6f8f5f", trees: false,
+    palette: ["#c9c3a6", "#bdb596", "#d3ccb0", "#b5ac8c", "#c6bfa2"],
+    roads: false, blocks: false, wall: true, wallColor: "#b9ae94", wallTop: "#a89d84",
+    mountains: 34, mountainSpread: 150,
+    rock: "#8fa07a", rockAlt: "#9db08a",
+    landmarks: ["watchtower", "watchtower", "bigben"] },
+  { key: "london", label: "伦敦",
+    ground: "#9fb894", water: "#6f9fc0", waterWidth: 60, tree: "#6f9a6a", trees: true,
+    palette: ["#cbb79c", "#dcc7a6", "#b9a894", "#e0d2b6", "#a9b3a5"],
+    roads: true, blocks: true, wall: false, mountains: 6, mountainSpread: 520,
+    rock: "#8aa39a", rockAlt: "#9db5ac",
+    landmarks: ["bigben", "eye", "towerbridge"] },
+  { key: "sydney", label: "悉尼",
+    ground: "#b6c6a8", water: "#5fb4cf", waterWidth: 78, tree: "#7fae7a", trees: true,
+    palette: ["#e2e0d4", "#cfd6d2", "#e8dcc4", "#c3ccc9", "#dcd3c0"],
+    roads: true, blocks: true, wall: false, mountains: 5, mountainSpread: 560,
+    rock: "#93b0a4", rockAlt: "#a6c2b6",
+    landmarks: ["opera", "harbourbridge", "tower"] },
+];
 /* A single 3D scene owns the character, particles, targets and collision visuals. */
 class FlightWorld {
   constructor(canvas) {
@@ -375,14 +404,10 @@ class FlightWorld {
     const T = THREE;
     this.city = new T.Group();
     this.scene.add(this.city);
-    this.ground = new T.Mesh(
-      new T.PlaneGeometry(5000, 5000),
-      this.mat("#adc8a1"),
-    );
+    this.ground = new T.Mesh(new T.PlaneGeometry(5000, 5000), this.mat("#adc8a1"));
     this.ground.rotation.x = -Math.PI / 2;
     this.ground.position.y = -1;
     this.scene.add(this.ground);
-    this.river = this.block(this.city, "#7ec7d8", 0, -0.5, -260, 45, 1, 1300);
     this.buildings = new T.InstancedMesh(
       this.box,
       new T.MeshStandardMaterial({ roughness: 0.85 }),
@@ -403,20 +428,183 @@ class FlightWorld {
       this.roads.push(
         this.block(this.city, "#e5d9b8", 0, 0.05, -i * 120, 1500, 0.1, 9),
       );
+    // 随主题重建的部分（水体 / 山脊 / 长城）单独放一组，换主题时整组清掉
+    this.terrain = new T.Group();
+    this.city.add(this.terrain);
+    this.river = null;
     this.mountains = [];
-    for (let i = 0; i < 14; i++) {
-      const mountain = new T.Mesh(
-        new T.ConeGeometry(100 + (i % 3) * 40, 100 + (i % 4) * 28, 5),
-        this.mat(i % 2 ? "#8db3a6" : "#a2c4b8"),
-      );
-      mountain.position.set(
-        (i % 2 ? 1 : -1) * (420 + (i % 3) * 50),
-        20,
-        -i * 95,
-      );
-      this.city.add(mountain);
-      this.mountains.push(mountain);
+    this.landmarks = [];
+    this.landCell = -1;
+    this.sceneTheme = -1;
+    this.setScene(0, true);
+  }
+
+  /** 换地标主题：重铺地面、水体、山脊，并重建地标池。 */
+  setScene(index) {
+    const T = THREE,
+      n = SCENE_THEMES.length;
+    const i = ((index % n) + n) % n;
+    const theme = SCENE_THEMES[i];
+    this.sceneTheme = i;
+    while (this.terrain.children.length) {
+      const child = this.terrain.children.pop();
+      child.parent = null;
     }
+    this.mountains = [];
+    this.ground.material = this.mat(theme.ground);
+    this.trees.visible = theme.trees;
+    this.trees.material = this.mat(theme.tree);
+    this.buildings.visible = theme.blocks;
+    this.windows.visible = theme.blocks;
+    this.roads.forEach((r) => (r.visible = theme.roads !== false));
+    if (theme.water) {
+      this.river = this.block(
+        this.terrain, theme.water, 0, -0.5, -260, theme.waterWidth || 45, 1, 1300,
+      );
+    } else this.river = null;
+    for (let k = 0; k < theme.mountains; k++) {
+      const m = new T.Mesh(
+        new T.ConeGeometry(100 + (k % 3) * 44, 100 + (k % 4) * 30, 5),
+        this.mat(k % 2 ? theme.rock : theme.rockAlt),
+      );
+      m.position.set(
+        (k % 2 ? 1 : -1) * (theme.mountainSpread + (k % 3) * 52),
+        20,
+        -k * (theme.key === "wall" ? 62 : 95),
+      );
+      this.terrain.add(m);
+      this.mountains.push(m);
+    }
+    if (theme.wall) {
+      for (const side of [-1, 1]) {
+        const x = side * 78;
+        // 墙体分两段收分，看起来是垒起来的石墙而不是一块板
+        this.block(this.terrain, theme.wallColor, x, 11, -300, 26, 22, 1000);
+        this.block(this.terrain, theme.wallTop, x, 26, -300, 19, 9, 1000);
+        this.block(this.terrain, theme.wallColor, x, 34, -300, 24, 7, 1000);
+        // 密集垛口（内外两侧都要，飞过去才有连续的齿）
+        for (let k = 0; k < 42; k++) {
+          const z = 40 - k * 24;
+          this.block(this.terrain, theme.wallTop, x - 9, 40, z, 5, 7, 11);
+          this.block(this.terrain, theme.wallTop, x + 9, 40, z, 5, 7, 11);
+        }
+      }
+    }
+    for (const old of this.landmarks) this.scene.remove(old);
+    this.landmarks = [];
+    const kinds = theme.landmarks;
+    for (let k = 0; k < 4; k++) {
+      const group = new T.Group();
+      this.buildLandmark(kinds[k % kinds.length], group);
+      group.visible = false;
+      this.scene.add(group);
+      this.landmarks.push(group);
+    }
+    this.landCell = -1;
+    return theme;
+  }
+
+  cycleScene() {
+    return this.setScene((this.sceneTheme || 0) + 1);
+  }
+
+  get sceneLabel() {
+    return (SCENE_THEMES[this.sceneTheme] || SCENE_THEMES[0]).label;
+  }
+
+  /* 地标全部用方块 / 球体拼，和游戏其它部分同一套语汇 */
+  buildLandmark(kind, g) {
+    const box = (c, x, y, z, sx, sy, sz) => this.block(g, c, x, y, z, sx, sy, sz);
+    const T = THREE;
+    if (kind === "tower") {
+      box("#cfd9d6", 0, 55, 0, 26, 110, 26);
+      box("#b9c6c3", 0, 116, 0, 36, 12, 36);
+      box("#9fb0ad", 0, 128, 0, 10, 26, 10);
+      this.ball(g, "#ffd23f", 0, 144, 0, 7);
+    } else if (kind === "eiffel") {
+      box("#8a7f6d", 0, 24, 0, 34, 48, 34);
+      box("#8a7f6d", 0, 60, 0, 16, 32, 16);
+      box("#6f6656", 0, 88, 0, 7, 28, 7);
+      this.ball(g, "#ffd23f", 0, 104, 0, 4);
+    } else if (kind === "bigben") {
+      box("#c9b189", 0, 42, 0, 20, 84, 20);
+      box("#b39a70", 0, 88, 0, 25, 8, 25);
+      for (const face of [[0, 10.3, 15, 1.6], [0, -10.3, 15, 1.6], [10.3, 0, 1.6, 15], [-10.3, 0, 1.6, 15]])
+        box("#fdf7e2", face[0], 64, face[1], face[2], 15, face[3]);
+      box("#d8b24a", 0, 104, 0, 13, 24, 13);
+      box("#d8b24a", 0, 122, 0, 6, 14, 6);
+    } else if (kind === "eye") {
+      const R = 46;
+      const ring = new T.Mesh(new T.TorusGeometry(R, 2.8, 8, 44), this.mat("#e8eef2"));
+      ring.position.set(0, R + 10, 0);
+      g.add(ring);
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        const spoke = box("#dbe3e8", 0, R + 10, 0, 1.4, R * 2, 1.4);
+        spoke.rotation.z = a;
+        box("#8fd6ff", Math.cos(a) * R, R + 10 + Math.sin(a) * R, 0, 7, 7, 5);
+      }
+      box("#c9d2d6", -36, R / 2 + 6, 0, 8, R + 12, 10);
+      box("#c9d2d6", 36, R / 2 + 6, 0, 8, R + 12, 10);
+    } else if (kind === "towerbridge") {
+      for (const sx of [-32, 32]) {
+        box("#b7a184", sx, 30, 0, 20, 60, 20);
+        box("#8fa9c4", sx, 66, 0, 25, 12, 25);
+        box("#6f8fae", sx, 80, 0, 10, 18, 10);
+      }
+      box("#9fb6cd", 0, 22, 0, 46, 8, 14);
+      box("#c8d4de", 0, 58, 0, 62, 4, 6);
+    } else if (kind === "opera") {
+      const shell = new T.SphereGeometry(1, 16, 10, 0, Math.PI, 0, Math.PI / 2);
+      const shellMat = new T.MeshStandardMaterial({ color: "#f7faf6", roughness: 0.3 });
+      for (let k = 0; k < 4; k++) {
+        const sh = new T.Mesh(shell, shellMat);
+        sh.scale.set(17 + k * 2, 27 - k * 3, 21);
+        sh.position.set(-26 + k * 17, 6, 0);
+        sh.rotation.y = -0.36;
+        g.add(sh);
+      }
+      box("#dfe7e2", 0, 3, 0, 80, 6, 34);
+    } else if (kind === "harbourbridge") {
+      const arch = new T.Mesh(new T.TorusGeometry(58, 3.6, 8, 44, Math.PI), this.mat("#8d9aa6"));
+      arch.position.set(0, 4, 0);
+      g.add(arch);
+      box("#7f8b96", 0, 44, 0, 152, 5, 16);
+      for (const sx of [-58, 58]) box("#a8b3bd", sx, 26, 0, 12, 52, 12);
+    } else if (kind === "watchtower") {
+      box("#b9ae94", 0, 14, 0, 22, 28, 22);
+      box("#a89d84", 0, 30, 0, 27, 5, 27);
+      for (let k = 0; k < 5; k++)
+        box("#9c9179", -10 + k * 5, 35, -10, 4, 6, 4);
+      box("#b9ae94", 0, 8, 21, 14, 16, 26);
+    }
+    return g;
+  }
+
+  /** 地标沿航线周期性出现，越过头顶就绕到最远处（和云的回收方式一致）。 */
+  landmarkUpdate(s) {
+    // 世界是朝相机流动的：z = 里程 - 地标里程，所以槽号要随里程递增。
+    // 之前写成 (cell - i) 会让地标往远处飘，永远掠不过来。
+    const SPACING = 260, N = this.landmarks.length;
+    if (!N) return;
+    const cell = Math.floor(s.distance / SPACING);
+    const fresh = cell !== this.landCell;
+    this.landmarks.forEach((g, i) => {
+      if (fresh) {
+        const slot = cell + i + 1;
+        const seed = Math.abs(Math.sin(slot * 12.9898) * 43758.5453) % 1;
+        const seed2 = Math.abs(Math.sin(slot * 78.233) * 12345.678) % 1;
+        const side = seed > 0.5 ? 1 : -1;
+        g.userData.side = side;
+        // 相机水平半视角约 38°，120 距离处只看得见 ±94。原来偏到 ±240 全飞在画面外，
+        // 收窄到紧贴航线两侧，才能真的从旁边掠过。
+        g.position.x = side * (52 + seed2 * 56);
+        g.rotation.y = (seed2 - 0.5) * 1.1 + (side > 0 ? Math.PI : 0);
+      }
+      g.position.z = s.distance - (cell + i + 1) * SPACING;
+      g.visible = g.position.z < 60;
+    });
+    this.landCell = cell;
   }
   /**
    * The traffic officer who shows up whenever 奶龙 touches the ground or a
@@ -540,7 +728,7 @@ class FlightWorld {
     const cell = cx + "," + cz;
     this.city.position.z = s.distance - cz * 48;
     this.city.position.x = cx * 48;
-    this.river.position.x = -cx * 48;
+    if (this.river) this.river.position.x = -cx * 48;
     this.ground.position.set(s.x, -1, 0);
     if (cell === this.cityCell) return;
     this.cityCell = cell;
@@ -561,11 +749,8 @@ class FlightWorld {
         obj.scale.set(bw, bw ? height : 0, bw);
         obj.updateMatrix();
         this.buildings.setMatrixAt(index, obj.matrix);
-        color.set(
-          ["#d4ded1", "#e9dfc8", "#d5dedf", "#edcda9", "#b2c9ba"][
-            Math.floor(seed * 5) % 5
-          ],
-        );
+        const palette = (SCENE_THEMES[this.sceneTheme] || SCENE_THEMES[0]).palette;
+        color.set(palette[Math.floor(seed * palette.length) % palette.length]);
         this.buildings.setColorAt(index++, color);
         for (let j = 0; j < 6; j++) {
           obj.position.set(
@@ -1110,6 +1295,7 @@ class FlightWorld {
     this.frameSpeed = ready ? 0 : s.speed;
     this.cityUpdate(s);
     this.cloudUpdate(s);
+    this.landmarkUpdate(s);
     // The pursuer is driven entirely from game state: the chase object holds
     // his absolute position, render() only mirrors it into the scene.
     const chase = s.chase;

@@ -659,6 +659,17 @@ body.learning .tutorial button { min-height: 40px; flex-shrink: 0; }
   50%       { transform: rotate(-98deg); }
   56%, 100% { transform: rotate(0deg); }
 }
+/* 「在哪飞」：四个地标排成 2×2，手机上也不挤 */
+.scene-switch {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 6px;
+}
+.scene-switch button {
+  min-height: 34px;
+  font-size: 11px;
+  white-space: nowrap;
+}
 @media (max-width: 760px) {
   .pose-loader { top: 47%; width: min(280px, 84vw); padding: 12px 15px 13px; }
   .loader-dragon { width: 104px; height: 88px; }

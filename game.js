@@ -108,6 +108,11 @@
       flash: Number((world.flash || 0).toFixed(3)),
       rain: world.weather ? Number(world.weather.rain.toFixed(2)) : 0,
       hold: Number((world.weatherHold || 0).toFixed(1)),
+      scene: world.sceneLabel,
+      marks: world.landmarks ? world.landmarks.length : -1,
+      marksVisible: world.landmarks ? world.landmarks.filter((g) => g.visible).length : -1,
+      markZ: world.landmarks && world.landmarks[0] ? Math.round(world.landmarks[0].position.z) : null,
+      markX: world.landmarks && world.landmarks[0] ? Math.round(world.landmarks[0].position.x) : null,
       step: world.weatherStep,
       queue: world.weatherQueue.length,
       mode: s.mode,
@@ -1213,6 +1218,11 @@
     if (/^Digit[123]$/.test(e.code)) useSkill(Number(e.code.at(-1)) - 1);
     if (e.code === "KeyF") fullscreen();
     if (e.code === "KeyT") toast("天气切换 · " + world.cycleWeather().label);
+    if (e.code === "KeyY") {
+      world.cycleScene();
+      syncSceneButtons();
+      toast("地标切换 · " + world.sceneLabel);
+    }
   });
   window.addEventListener("keyup", (e) => keys.delete(e.code));
   function bindHold(el, control) {
@@ -1796,6 +1806,24 @@
       return false;
     }
   }
+  // ---- 地标主题：手机端也能换，不用键盘 ----
+  const sceneButtons = [...document.querySelectorAll("[data-scene]")];
+  function syncSceneButtons() {
+    sceneButtons.forEach((b) => {
+      const on = Number(b.dataset.scene) === world.sceneTheme;
+      b.setAttribute("aria-pressed", String(on));
+      b.classList.toggle("selected", on);
+    });
+  }
+  sceneButtons.forEach((b) =>
+    b.addEventListener("click", () => {
+      const preset = world.setScene(Number(b.dataset.scene));
+      syncSceneButtons();
+      toast("地标切换 · " + preset.label);
+      beep(560);
+    }),
+  );
+  syncSceneButtons();
   $("cameraBtn").addEventListener("click", enableCamera);
   $("keyboardBtn").addEventListener("click", stopCamera);
   window.addEventListener("pagehide", stopCamera);
