@@ -424,3 +424,31 @@ body.learning .tutorial b { flex-shrink: 0; min-width: 42px; width: auto; height
 body.learning .tutorial span { font-size: 14px; line-height: 1.45; }
 body.learning .tutorial button { min-height: 40px; flex-shrink: 0; }
 @media (max-width: 360px) { body.learning .tutorial { gap: 8px; padding: 10px; } body.learning .tutorial span { font-size: 12px; } }
+
+/* ================== 手机端底部模块避让（实测重叠修复） ==================
+   390x844 飞行中实测坐标：
+     #toast               y800-834   ← fixed bottom:10 且左右各 10，近乎全宽
+     .flight-instruments  y785-840   ← 左下角仪表盘
+     #pauseBtn            y792-836   ← 右下角暂停键
+   提示条同时压住这两块。它背景只有约 6% 透明度，底下「海拔 4m / 317」
+   会透上来，两边都看不清 —— 把它抬到仪表盘上方。
+   教学条原本 bottom:100（实测 y682-752），会被抬起的提示条撞到，一起上移。
+   本文件在 style.css 之后加载，写在这里才能盖住前面的同名规则。 */
+@media (max-width: 760px) {
+  body.playing .toast,
+  body.playing .toast.show {
+    bottom: max(74px, calc(env(safe-area-inset-bottom) + 74px));
+  }
+  body.playing .tutorial {
+    top: auto;
+    bottom: max(180px, calc(env(safe-area-inset-bottom) + 180px));
+  }
+  /* 校准 / 选玩法界面：整叠内容原本贴底（离屏 16px），提示条 fixed bottom:10
+     高 34px，正好压掉最后一个按钮文字最后 9px。给容器补出底部留白，
+     justify-content:flex-end 会把整叠顶上去。 */
+  body[data-screen="calibration"] .overlay,
+  body[data-screen="setup"] .overlay {
+    padding-bottom: max(54px, calc(env(safe-area-inset-bottom) + 54px));
+  }
+}
+
