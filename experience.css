@@ -376,7 +376,7 @@ body[data-screen="result"] .start-button { order: 2; margin-top: 26px; }
 .result-goal[hidden], #changeModeBtn[hidden] { display: none; }
 body[data-screen="result"] .result-goal { order: 2; margin: 17px 0 0; font-size: 12px; line-height: 1.5; color: #758362; }
 body[data-screen="result"] .start-button { order: 3; margin-top: 20px; }
-body[data-screen="result"] #changeModeBtn { order: 4; align-self: center; padding: 18px 16px 2px; text-decoration: underline; text-underline-offset: 4px; }
+body[data-screen="result"] #changeModeBtn { order: 4; align-self: center; padding: 10px 16px 2px; margin-top: 4px; text-decoration: underline; text-underline-offset: 4px; }
 body[data-screen="result"] #changeModeBtn:disabled { opacity: .45; cursor: wait; }
 body[data-screen="result"] .toast, body[data-screen="paused"] .toast { display: none; }
 /* Action-first entry and a calm practice screen. */

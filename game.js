@@ -483,6 +483,16 @@
     $("resultGoal").hidden = true;
     s.menuPreview = true;
     s.calibrating = false;
+    // 从结算界面进来时，场景还停在刚才那一局的高度上（相机在 1000m 高空、
+    // 城市在脚下），"选玩法"这一屏会显得莫名其妙。这里和「返回首页」一样把
+    // 预览状态拉回大厅：站回楼顶、速度清零。
+    s.x = 0;
+    s.altitude = 18;
+    s.vx = 0;
+    s.vy = 0;
+    // 被抓住结束那一局时 s.chase 会留着 caught:true，render() 里交警就一直是可见的，
+    // 于是"选玩法"场景里会杵着一个交警。这里清掉。
+    s.chase = null;
     document.body.dataset.screen = "setup";
     $("setupBack").hidden = false;
     $("resultStats").hidden = true;
@@ -1275,6 +1285,10 @@
   // Camera lifecycle is appended from the previous version, retaining local-only pose processing.
   function stopCamera() {
     cameraGeneration++;
+    // 关键：作废在途加载的同时把加载卡收掉。
+    // 在途的 activateCamera 会因为 generation 变了直接 return，
+    // 不会再走 poseLoaderFinish，卡就会一直挂在屏幕上。
+    poseLoaderHide();
     poseReady = false;
     $("poseLive").hidden = true;
     s.camera = false;
