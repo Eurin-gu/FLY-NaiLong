@@ -528,12 +528,12 @@ body.learning .tutorial button { min-height: 40px; flex-shrink: 0; }
 }
 
 /* ---- 卡片里的奶龙 ----
-   照参考图（黄色豆形身子 + 薄荷绿圈大黑眼 + 一条平嘴）用 CSS 重画：
-   比直接用那张 200x200 带水印的白底图更清晰、可任意缩放，而且还能做动作。 */
+   用的是从参考图抠出来的透明 PNG（public/nailong.png）：白底已抠掉、
+   中间那行 qiubiaoqing.com 水印已用中值底图 + 按列插值抹掉。 */
 .loader-dragon {
   position: relative;
-  width: 116px;
-  height: 112px;
+  width: 126px;
+  height: 124px;
   margin: 0 auto 10px;
   animation: dragonAct 7.2s ease-in-out infinite;
 }
@@ -542,106 +542,41 @@ body.learning .tutorial button { min-height: 40px; flex-shrink: 0; }
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 0;
-  width: 64px;
+  bottom: 2px;
+  width: 68px;
   height: 11px;
-  margin-left: -32px;
+  margin-left: -34px;
   border-radius: 50%;
   background: rgba(122, 96, 34, 0.16);
 }
-.loader-dragon .dragon-body {
+.loader-dragon img {
   position: absolute;
   left: 50%;
-  bottom: 5px;
-  width: 88px;
-  height: 100px;
-  margin-left: -44px;
-  /* 上圆下略收的豆形 */
-  border-radius: 48% 48% 45% 45% / 40% 40% 56% 56%;
-  background: radial-gradient(74% 60% at 34% 22%, #ffe488 0%, #ffd24c 46%, #f4b71d 100%);
-  box-shadow: inset -8px -13px 22px rgba(176, 112, 0, 0.15);
-  z-index: 2;
+  bottom: 8px;
+  width: 118px;
+  height: auto;
+  transform: translateX(-50%);
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  /* 图左半边本身偏淡，贴在米色卡片上对比不够；加一层贴合轮廓的投影让它立起来 */
+  filter: drop-shadow(0 7px 12px rgba(150, 118, 36, 0.22));
 }
-.loader-dragon .dragon-eye {
-  position: absolute;
-  top: 23px;
-  width: 24px;
-  height: 26px;
-  border-radius: 50%;
-  background: #93cfa6; /* 薄荷绿外圈 */
-  animation: dragonBlink 3.8s infinite;
-  z-index: 3;
-}
-.loader-dragon .dragon-eye.left { left: 15px; }
-.loader-dragon .dragon-eye.right { right: 15px; }
-.loader-dragon .dragon-eye s {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 16px;
-  height: 18px;
-  border-radius: 50%;
-  background: #1c1c1a; /* 大黑瞳 */
-  display: block;
-}
-.loader-dragon .dragon-eye s::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
-}
-.loader-dragon .dragon-mouth {
-  position: absolute;
-  left: 50%;
-  top: 58px;
-  width: 27px;
-  height: 7px;
-  margin-left: -13.5px;
-  /* 参考图是一条约乎平直的线，只带一点点弧度，不是上扬的笑 */
-  border-bottom: 3px solid #6d5a2c;
-  border-radius: 0 0 16% 16%;
-  z-index: 3;
-}
+/* 挤压拉伸让它有生命感：起跳拉长 → 落地压扁 → 歪头 → 再蹦一次 */
 @keyframes dragonAct {
-  0%, 8%   { transform: translateY(0) rotate(0deg) scale(1); }
-  16%      { transform: translateY(-12px) rotate(0deg) scale(1.05); }
-  24%      { transform: translateY(0) rotate(0deg) scale(0.98); }
-  32%      { transform: translateY(-3px) rotate(-9deg) scale(1); }
-  40%      { transform: translateY(-3px) rotate(9deg) scale(1); }
-  48%      { transform: translateY(0) rotate(0deg) scale(1); }
-  56%      { transform: translateY(-2px) rotate(0deg) scale(1.08); }
-  64%      { transform: translateY(0) rotate(0deg) scale(0.97); }
-  72%      { transform: translateY(-17px) rotate(0deg) scale(1.02); }
-  80%,100% { transform: translateY(0) rotate(0deg) scale(1); }
-}
-@keyframes dragonBlink {
-  0%, 91%, 100% { transform: scaleY(1); }
-  95%           { transform: scaleY(0.12); }
-}
-@keyframes dragonWingLeft {
-  0%, 100% { transform: rotate(-20deg) scaleX(1); }
-  50%      { transform: rotate(-44deg) scaleX(1.1); }
-}
-@keyframes dragonWingRight {
-  0%, 100% { transform: rotate(20deg) scaleX(1); }
-  50%      { transform: rotate(44deg) scaleX(1.1); }
-}
-@keyframes dragonArmLeft {
-  0%, 100% { transform: rotate(0deg); }
-  50%      { transform: rotate(16deg); }
-}
-/* 歪头那一段举起右爪挥三下 */
-@keyframes dragonArmRight {
-  0%, 26%   { transform: rotate(0deg); }
-  32%       { transform: rotate(-122deg); }
-  38%       { transform: rotate(-96deg); }
-  44%       { transform: rotate(-124deg); }
-  50%       { transform: rotate(-98deg); }
-  56%, 100% { transform: rotate(0deg); }
+  0%, 8%   { transform: translateY(0) rotate(0deg) scale(1, 1); }
+  14%      { transform: translateY(-13px) rotate(0deg) scale(0.96, 1.05); }
+  20%      { transform: translateY(0) rotate(0deg) scale(1.06, 0.94); }
+  25%      { transform: translateY(0) rotate(0deg) scale(1, 1); }
+  33%      { transform: translateY(-4px) rotate(-8deg) scale(1, 1); }
+  41%      { transform: translateY(-4px) rotate(8deg) scale(1, 1); }
+  47%      { transform: translateY(-4px) rotate(0deg) scale(1, 1); }
+  55%      { transform: translateY(-7px) rotate(0deg) scale(0.94, 1.08); }
+  61%      { transform: translateY(0) rotate(0deg) scale(1.07, 0.93); }
+  67%      { transform: translateY(0) rotate(0deg) scale(1, 1); }
+  75%      { transform: translateY(-18px) rotate(0deg) scale(0.97, 1.04); }
+  83%      { transform: translateY(0) rotate(0deg) scale(1.05, 0.95); }
+  89%,100% { transform: translateY(0) rotate(0deg) scale(1, 1); }
 }
 /* 「在哪飞」：四个地标排成 2×2，手机上也不挤 */
 .scene-switch {
@@ -650,20 +585,17 @@ body.learning .tutorial button { min-height: 40px; flex-shrink: 0; }
   gap: 6px;
 }
 .scene-switch button {
-  .loader-dragon { width: 100px; height: 96px; }
-  .loader-dragon::after { width: 54px; height: 9px; margin-left: -27px; }
-  .loader-dragon .dragon-body { width: 76px; height: 86px; margin-left: -38px; bottom: 4px; }
-  .loader-dragon .dragon-eye { top: 20px; width: 21px; height: 23px; }
-  .loader-dragon .dragon-eye.left { left: 13px; }
-  .loader-dragon .dragon-eye.right { right: 13px; }
-  .loader-dragon .dragon-eye s { top: 3px; left: 4px; width: 14px; height: 16px; }
-  .loader-dragon .dragon-mouth { top: 50px; width: 23px; height: 6px; margin-left: -11.5px; }
-  .loader-dragon .dragon-foot.right { right: 19px; }
+  min-height: 34px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .pose-loader { top: 47%; width: min(280px, 84vw); padding: 12px 15px 13px; }
+  .loader-dragon { width: 106px; height: 104px; }
+  .loader-dragon::after { width: 56px; height: 9px; margin-left: -28px; }
+  .loader-dragon img { width: 100px; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .loader-dragon,
-  .loader-dragon .dragon-eye,
-  .loader-dragon .dragon-arm,
-  .loader-dragon .dragon-wing { animation: none; }
+  .loader-dragon { animation: none; }
   .pose-loader-track i::after { animation: none; }
 }
-
