@@ -121,7 +121,7 @@
                     <strong id="bestText">0 <em>m</em></strong>
                   </div>
                   <div class="flight-tag" id="overlayTag">今日宜：一飞冲天</div>
-                  <h2 id="overlayTitle">小翅膀，<br />大动静。</h2>
+                  <h2 id="overlayTitle">举起双手，<br />一起飞。</h2>
                   <p id="overlayDescription">
                     你负责扇，我负责飞。<br />至于怎么飞的……别问。
                   </p>
@@ -146,8 +146,9 @@
                     </div>
                   </div>
                   <button class="start-button" id="startBtn">
-                    开始游戏 <span aria-hidden="true">↗</span>
+                    开启摄像头 <span aria-hidden="true">↗</span>
                   </button>
+                  <button class="back-button" id="manualStart" type="button">不用摄像头，触屏 / 键盘试玩 →</button>
                   <button class="back-button" id="setupBack" type="button" hidden>← 返回首页</button>
                   <button class="back-button" id="changeModeBtn" type="button" hidden>换个玩法</button>
                   <div class="lobby-challenge"><span>第一份飞行小目标</span><strong>穿过 3 个光环</strong><small>达成额外 +300 分 · 躲开飞鸟和交警。</small></div>
@@ -177,7 +178,7 @@
                     <button type="button" data-guide="fall" role="tab" aria-selected="false"><em>03</em> 停扇下坠</button>
                   </div>
                   <p class="guide-explain" id="guideExplain">双臂上下反复扇动，每扇一次就补一点升力。扇得越勤，飞得越稳。</p>
-                  <div class="setup-camera-view" id="setupCameraView" hidden><video id="setupCameraPreview" autoplay muted playsinline></video><span id="setupCameraFeedback">让肩膀和双手入镜</span></div>
+                  <div class="setup-camera-view" id="setupCameraView" hidden><video id="setupCameraPreview" autoplay muted playsinline></video><span id="setupCameraFeedback">让肩膀和双手入镜</span><strong id="poseSignals" aria-live="off">○ 肩膀　○ 左手　○ 右手</strong></div>
                 </aside>
               </div>
               <div class="flight-mission" id="flightMission" hidden><span>今日小目标</span><strong id="missionText">穿过光环 0 / 3</strong></div>
@@ -187,7 +188,7 @@
                 role="status"
                 aria-live="polite"
               ></div>
-              <div class="combo" id="comboText"></div>
+              <div class="combo" id="comboText"></div><div id="poseLive" class="pose-live" hidden></div>
               <div class="chase" id="chase" role="status" aria-live="polite" hidden>
                 <span class="chase-siren">🚨</span>
                 <div class="chase-body">

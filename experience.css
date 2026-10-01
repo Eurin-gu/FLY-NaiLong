@@ -379,3 +379,48 @@ body[data-screen="result"] .start-button { order: 3; margin-top: 20px; }
 body[data-screen="result"] #changeModeBtn { order: 4; align-self: center; padding: 18px 16px 2px; text-decoration: underline; text-underline-offset: 4px; }
 body[data-screen="result"] #changeModeBtn:disabled { opacity: .45; cursor: wait; }
 body[data-screen="result"] .toast, body[data-screen="paused"] .toast { display: none; }
+/* Action-first entry and a calm practice screen. */
+#manualStart { min-height: 44px; padding: 14px 0; text-decoration: underline; text-underline-offset: 4px; }
+body:not([data-screen="intro"]):not([data-screen="calibration"]) #manualStart { display: none; }
+body[data-screen="intro"] .lobby-challenge, body[data-screen="intro"] .start-tip { display: none; }
+body[data-screen="intro"] .overlay h2 { font-size: clamp(44px, 5.7vw, 78px); line-height: 1.1; }
+body[data-screen="calibration"] .gesture-guide { display: block; width: min(320px, 34%); }
+body[data-screen="calibration"] .guide-steps, body[data-screen="calibration"] .guide-explain { display: none; }
+body[data-screen="calibration"] .setup-camera-view { position: relative; inset: auto; width: 100%; height: 180px; margin-top: 12px; }
+body[data-screen="calibration"] .guide-demo { height: 150px; }
+body[data-screen="calibration"] .setup-camera-view span { bottom: 28px; font-size: 12px; }
+#poseSignals { position: absolute; bottom: 0; left: 0; width: 100%; padding: 8px 4px; font-size: 11px; text-align: center; background: #263c39; color: #ffdfa1; }
+#poseSignals[data-ready="true"] { color: #a8f4bc; }
+.pose-live { position: absolute; z-index: 5; top: 112px; left: 22px; max-width: calc(100% - 44px); padding: 8px 12px; border-radius: 12px; background: #263c39e8; color: white; font-size: 12px; pointer-events: none; }
+.pose-live[hidden] { display: none; }
+body.learning .skill-panel, body.learning .fuel-heading, body.learning .fuel-switch, body.learning .flight-mission, body.learning .radio, body.learning .chase { display: none !important; }
+body.playing .flight-instruments > div:nth-child(2), body.playing .flight-instruments > div:nth-child(3), body.playing .height-ruler { display: none; }
+body.learning .tutorial { border-radius: 18px; box-shadow: 0 8px 28px #263c3920; padding: 14px 18px; max-width: calc(100% - 24px); }
+@media (max-width: 760px) {
+  body[data-screen="intro"] .overlay h2 { font-size: clamp(30px, 8vw, 42px); }
+  body[data-screen="intro"] .overlay-content { padding: 22px; border-radius: 24px; }
+  body[data-screen="intro"] .overlay { padding: 14px 14px max(18px, env(safe-area-inset-bottom)); }
+  body[data-screen="calibration"] .overlay { display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; padding: 14px 14px max(16px, env(safe-area-inset-bottom)); overflow-y: auto; background: #f5f0d980; }
+  body[data-screen="calibration"] .overlay-content { order: 2; width: 100%; padding: 18px; }
+  body[data-screen="calibration"] .overlay h2 { font-size: 29px; }
+  body[data-screen="calibration"] .overlay p { margin-bottom: 10px; }
+  body[data-screen="calibration"] .gesture-guide { position: relative; inset: auto; order: 1; width: 100%; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  body[data-screen="calibration"] .guide-heading { grid-column: 1 / -1; }
+  body[data-screen="calibration"] .guide-demo { height: 122px; margin: 0; }
+  body[data-screen="calibration"] .setup-camera-view { height: 122px; width: 100%; margin: 0; }
+  body[data-screen="calibration"] .stick-pilot { height: 132px; width: 122px; left: calc(50% - 61px); }
+  body[data-screen="calibration"] .setup-camera-view span { font-size: 10px; bottom: 25px; }
+  body.playing .pose-live { top: 96px; left: 12px; max-width: calc(100% - 24px); font-size: 11px; }
+  body.learning .tutorial { top: auto; bottom: max(100px, calc(80px + env(safe-area-inset-bottom))); left: 12px; right: 12px; transform: none; width: auto; }
+  body.playing .flight-instruments { right: auto; background: #fff9e9d9; border-radius: 12px; padding: 8px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .stick-arm, .stick-pilot, .guide-airflow { animation: none !important; } }
+@media (max-width: 760px) {
+  body.playing .stage-top { display: flex !important; position: absolute; z-index: 8; right: 12px; bottom: max(16px, env(safe-area-inset-bottom)); height: auto; width: auto; padding: 0; border: 0; background: transparent; }
+  body.playing .stage-top .location, body.playing #restartBtn, body.playing #fullscreenBtn { display: none; }
+  body.playing #pauseBtn { width: 44px; height: 44px; border-radius: 14px; background: #fff9e9ed; box-shadow: 0 3px 12px #263c3926; }
+}
+body.learning .tutorial b { flex-shrink: 0; min-width: 42px; width: auto; height: auto; border-radius: 10px; padding: 6px; font-size: 12px; white-space: nowrap; }
+body.learning .tutorial span { font-size: 14px; line-height: 1.45; }
+body.learning .tutorial button { min-height: 40px; flex-shrink: 0; }
+@media (max-width: 360px) { body.learning .tutorial { gap: 8px; padding: 10px; } body.learning .tutorial span { font-size: 12px; } }

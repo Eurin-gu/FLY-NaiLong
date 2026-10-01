@@ -149,181 +149,151 @@ class FlightWorld {
     return m;
   }
   createDragon() {
-    const T = THREE,
-      g = new T.Group();
-    // Broad, continuous silhouette; small inset eyes and a smile rather than a protruding muzzle.
-    const yellow = "#ffc629";
-    this.body = this.ball(g, yellow, 0, -0.12, 0, 1.9, 2.1, 1.48);
-    // A soft belly marking follows the body surface instead of floating like a plate.
-    this.body.geometry = new T.SphereGeometry(1, 64, 48);
-    const positions = this.body.geometry.attributes.position,
-      colors = [];
-    const gold = new T.Color(yellow),
-      cream = new T.Color("#fff3d5");
-    for (let i = 0; i < positions.count; i++) {
-      const x = positions.getX(i),
-        y = positions.getY(i),
-        z = positions.getZ(i);
-      const radius = Math.sqrt((x / 0.73) ** 2 + ((y + 0.12) / 0.82) ** 2);
-      const blend =
-        z > 0.25 ? 1 - T.MathUtils.smoothstep(radius, 0.82, 1.03) : 0;
-      const c = gold.clone().lerp(cream, blend);
-      colors.push(c.r, c.g, c.b);
-    }
-    this.body.geometry.setAttribute(
-      "color",
-      new T.Float32BufferAttribute(colors, 3),
-    );
-    this.body.material = new T.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.72,
-    });
-    const head = new T.Group();
-    head.position.set(0, 1.58, 0.18);
-    head.scale.set(1.42, 1.02, 1.18);
-    g.add(head);
-    this.head = head;
-    const outline = [
-      [0, -1.4],
-      [0.7, -1.31],
-      [1.25, -1.12],
-      [1.51, -0.8],
-      [1.63, -0.35],
-      [1.65, 0.4],
-      [1.51, 1.05],
-      [1.12, 1.6],
-      [0.4, 1.93],
-      [0, 1.97],
-    ];
-    const curve = new T.CatmullRomCurve3(
-      outline.map(([r, y]) => new T.Vector3(r, y, 0)),
-    );
-    const headMesh = new T.Mesh(
-      new T.LatheGeometry(
-        curve.getPoints(48).map((p) => new T.Vector2(Math.max(0, p.x), p.y)),
-        40,
-      ),
-      this.mat(yellow),
-    );
-    headMesh.scale.z = 0.81;
-    head.add(headMesh);
-    this.eyes = [];
-    for (const side of [-1, 1]) {
-      const x = side * 0.69;
-      for (const [color, z, sx, sy, sz] of [
-        ["#fff7c5", 1.255, 0.37, 0.37, 0.07],
-        ["#458b42", 1.313, 0.31, 0.32, 0.055],
-        ["#10251b", 1.359, 0.235, 0.255, 0.035],
-      ]) {
-        const eye = this.ball(head, color, x, 0.15, z, sx, sy, sz);
-        eye.userData.openScaleY = sy;
-        this.eyes.push(eye);
+    const T = THREE, dragon = new T.Group();
+    const skinColor = new T.Color('#ffb51b');
+    const skin = new T.MeshStandardMaterial({ color: skinColor, roughness: .57 });
+    const nail = new T.MeshStandardMaterial({ color: '#785848', roughness: .76 });
+    const pink = new T.MeshStandardMaterial({ color: '#e79193', roughness: .7 });
+    const ivory = new T.MeshStandardMaterial({ color: '#fff7db', roughness: .4 });
+    const green = new T.MeshStandardMaterial({ color: '#477c35', roughness: .32 });
+    const pupil = new T.MeshStandardMaterial({ color: '#101b15', roughness: .19 });
+    const glint = new T.MeshBasicMaterial({ color: '#fffdf3' });
+    const sphere = new T.SphereGeometry(1, 40, 28);
+    const oval = (parent, material, position, scale) => {
+      const mesh = new T.Mesh(sphere, material);
+      mesh.position.set(...position);
+      mesh.scale.set(...scale);
+      parent.add(mesh);
+      return mesh;
+    };
+    const smoothNormals = geometry => {
+      geometry.computeVertexNormals();
+      const n=geometry.attributes.normal, rows=geometry.userData.radialRows;
+      const end=geometry.userData.radialSegments*rows;
+      for(let j=0;j<rows;j++){
+        const normal=new T.Vector3(n.getX(j)+n.getX(end+j),n.getY(j)+n.getY(end+j),n.getZ(j)+n.getZ(end+j)).normalize();
+        n.setXYZ(j,normal.x,normal.y,normal.z);n.setXYZ(end+j,normal.x,normal.y,normal.z);
       }
-      const glint = this.ball(
-        head,
-        "#ffffff",
-        x - 0.055,
-        0.247,
-        1.391,
-        0.048,
-        0.057,
-        0.018,
-      );
-      glint.userData.openScaleY = 0.057;
-      this.eyes.push(glint);
-      this.ball(g, yellow, side * 1.05, -1.83, 0.32, 0.69, 0.64, 0.82);
-      for (let j = 0; j < 3; j++)
-        this.ball(
-          g,
-          "#967048",
-          side * 1.05 + (j - 1) * 0.23,
-          -2.16,
-          1.07,
-          0.08,
-          0.09,
-          0.14,
-        );
-      const arm = new T.Group();
-      arm.position.set(side * 1.6, 0.18, 0.12);
-      g.add(arm);
-      this.ball(arm, yellow, side * 0.14, -0.32, 0.1, 0.68, 0.82, 0.62);
-      this.ball(arm, yellow, side * 0.31, -0.78, 0.34, 0.52, 0.48, 0.46);
-      for (let j = 0; j < 3; j++)
-        this.ball(
-          arm,
-          "#967048",
-          side * 0.31 + (j - 1) * 0.15,
-          -0.95,
-          0.54,
-          0.06,
-          0.09,
-          0.09,
-        );
-      if (side === -1) this.leftArm = arm;
-      else this.rightArm = arm;
+      n.needsUpdate=true;
+    };
+    const lathe = (profile, depth, segments = 64) => {
+      const curve = new T.CatmullRomCurve3(profile.map(([r, y]) => new T.Vector3(r, y, 0)));
+      const points = curve.getPoints(96).map(p => new T.Vector2(Math.max(.001, p.x), p.y));
+      const geometry = new T.LatheGeometry(points, segments);
+      geometry.scale(1, 1, depth);
+      // Lathe vertices wrap around, but the seam has duplicate positions.
+      // Average their normals after sculpting so the face has no vertical crease.
+      geometry.userData.radialRows=points.length;
+      geometry.userData.radialSegments=segments;
+      smoothNormals(geometry);
+      return { geometry, points };
+    };
+
+    // Pear-shaped torso: broad hips and shoulders overlap the short legs.
+    const torso = lathe([[.001,-2.56],[.72,-2.49],[1.18,-2.23],[1.49,-1.78],
+      [1.62,-1.19],[1.60,-.64],[1.45,-.05],[1.16,.45],[.72,.7],[.001,.78]], .79);
+    const colors = [], pos = torso.geometry.attributes.position;
+    const bellyColor = new T.Color('#fff0d0');
+    for (let i = 0; i < pos.count; i++) {
+      const x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i);
+      const patch = Math.hypot(x/1.08, (y+.99)/1.33);
+      const blend=(1-T.MathUtils.smoothstep(patch,.89,1.04))*T.MathUtils.smoothstep(z,.5,.83);
+      // Subtle occlusion under the chin gives the neck a soft, continuous join.
+      const occlusion=1-.11*T.MathUtils.smoothstep(y,-.2,.55);
+      const c=skinColor.clone().lerp(bellyColor,blend).multiplyScalar(occlusion);
+      colors.push(c.r,c.g,c.b);
     }
-    const smilePoints = [];
-    for (let i = 0; i <= 20; i++) {
-      const t = i / 20,
-        x = (t - 0.5) * 0.99;
-      smilePoints.push(
-        new T.Vector3(
-          x,
-          -0.52 - Math.sin(t * Math.PI) * 0.14,
-          Math.sqrt(1.59 * 1.59 - x * x) * 0.81 + 0.028,
-        ),
-      );
+    torso.geometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));
+    this.body=new T.Mesh(torso.geometry,new T.MeshStandardMaterial({vertexColors:true,roughness:.64}));
+    dragon.add(this.body);
+
+    // Domed forehead and rounded cheeks, with no superellipse's flat chin.
+    this.head=new T.Group();this.head.position.set(0,1.32,.30);dragon.add(this.head);
+    const headShape=lathe([[.001,-1.47],[.55,-1.43],[1.05,-1.27],[1.46,-.97],
+      [1.70,-.55],[1.76,-.04],[1.73,.48],[1.58,.97],[1.28,1.39],
+      [.88,1.66],[.43,1.82],[.001,1.88]],.83);
+    const faceDepth=(x,y)=>{
+      let radius=.01;
+      for(let i=1;i<headShape.points.length;i++){
+        const a=headShape.points[i-1],b=headShape.points[i];
+        if(y>=a.y&&y<=b.y){radius=T.MathUtils.lerp(a.x,b.x,(y-a.y)/(b.y-a.y));break;}
+      }
+      return .83*Math.sqrt(Math.max(.001,radius*radius-x*x));
+    };
+    // Soft cheek volume is sculpted into the surface, including the smile's muzzle.
+    const cheekDepth=(x,y)=>.11*Math.exp(-Math.pow((y+.47)/.39,2))*Math.exp(-Math.pow(x/1.13,4));
+    const hp=headShape.geometry.attributes.position;
+    for(let i=0;i<hp.count;i++){
+      const x=hp.getX(i),y=hp.getY(i),z=hp.getZ(i);
+      if(z>0)hp.setZ(i,z+cheekDepth(x,y)*T.MathUtils.smoothstep(z,.3,.9));
     }
-    const smile = new T.Mesh(
-      new T.TubeGeometry(
-        new T.CatmullRomCurve3(smilePoints),
-        24,
-        0.027,
-        6,
-        false,
-      ),
-      this.mat("#946228"),
-    );
-    smile.visible = false;
-    head.add(smile);
-    // The broad, open smile is a stronger match for the supplied character references.
-    this.mouth = this.ball(head, "#351d20", 0, -0.39, 1.39, 0.48, 0.24, 0.065);
-    this.ball(head, "#e98779", 0, -0.48, 1.455, 0.27, 0.08, 0.025);
-    this.tail = this.ball(g, "#f4c42b", 0, -1.1, -1.65, 0.58, 0.5, 1.12);
-    this.tail.rotation.x = -0.3;
-    for (let i = 0; i < 3; i++) {
-      const spike = new T.Mesh(
-        new T.ConeGeometry(0.17, 0.38, 6),
-        this.mat("#cca13d"),
-      );
-      spike.position.set(0, 0.3 - i * 0.5, -1.4 - i * 0.2);
-      spike.rotation.x = -0.9;
-      g.add(spike);
+    smoothNormals(headShape.geometry);
+    this.head.add(new T.Mesh(headShape.geometry,skin));
+    const surface=(x,y)=>faceDepth(x,y)+cheekDepth(x,y);
+    this.eyes=[];
+    for(const side of [-1,1]){
+      const eye=new T.Group();const ex=side*.78,ey=.21;
+      eye.position.set(ex,ey,surface(ex,ey)-.055);eye.rotation.y=side*.21;
+      this.head.add(eye);
+      oval(eye,ivory,[0,0,0],[.325,.354,.10]);
+      oval(eye,green,[side*-.013,.012,.074],[.272,.313,.069]);
+      oval(eye,pupil,[side*-.013,.012,.13],[.221,.264,.046]);
+      oval(eye,glint,[-.065,.099,.171],[.043,.047,.014]);
+      oval(eye,glint,[.061,-.09,.174],[.017,.02,.009]);
+      // The eye is partially embedded in the cheek surface.
+      eye.userData.openScaleY=1;this.eyes.push(eye);
+
+      const arm=new T.Group();arm.position.set(side*1.24,.17,.02);dragon.add(arm);
+      const armShape=lathe([[.001,-1.43],[.21,-1.39],[.35,-1.25],[.41,-.94],
+        [.43,-.53],[.39,-.17],[.27,.10],[.001,.22]],.96,40).geometry;
+      // Bend each arm smoothly away from the torso; hand and arm are one mesh.
+      const ap=armShape.attributes.position;
+      for(let i=0;i<ap.count;i++)ap.setX(i,ap.getX(i)+side*.22*Math.sin((-ap.getY(i)+.2)*1.1));
+      smoothNormals(armShape);arm.add(new T.Mesh(armShape,skin));
+      for(let j=0;j<3;j++)oval(arm,nail,[side*.20+(j-1)*.16,-1.37,.18],[.081,.096,.12]);
+      oval(arm,pink,[side*.20,-1.08,.366],[.17,.20,.022]);
+      if(side<0)this.leftArm=arm;else this.rightArm=arm;
+
+      const leg=lathe([[.001,-.53],[.30,-.52],[.49,-.46],[.51,-.27],
+        [.50,.05],[.54,.36],[.47,.58],[.001,.69]],1.02,40).geometry;
+      const foot=new T.Mesh(leg,skin);foot.position.set(side*.78,-2.32,.14);dragon.add(foot);
+      for(let j=0;j<3;j++)oval(dragon,nail,[side*.78+(j-1)*.23,-2.76,.61],[.106,.115,.137]);
     }
-    // Small strap-on wings preserve the character silhouette while making wingbeats legible.
-    this.wings = [];
-    for (const side of [-1, 1]) {
-      const wing = new T.Group();
-      wing.position.set(side * 1.32, 0.4, -0.8);
-      const shape = new T.Shape();
-      shape.moveTo(0, 0);
-      shape.quadraticCurveTo(side * 0.7, 1.1, side * 2.05, 1.25);
-      shape.quadraticCurveTo(side * 1.8, 0.45, side * 1.6, -0.05);
-      shape.quadraticCurveTo(side * 0.8, 0.25, 0, -0.6);
-      shape.closePath();
-      const membrane = new T.Mesh(
-        new T.ShapeGeometry(shape),
-        new T.MeshStandardMaterial({
-          color: "#fff0aa",
-          side: T.DoubleSide,
-          roughness: 0.8,
-        }),
-      );
-      wing.add(membrane);
-      g.add(wing);
-      this.wings.push(wing);
+    const smile=[];
+    for(let i=0;i<=40;i++){
+      const x=-.56+i*.028, y=-.58+.125*Math.pow(x/.56,2);
+      smile.push(new T.Vector3(x,y,surface(x,y)+.006));
     }
-    return g;
+    this.mouth=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(smile),40,.018,8,false),
+      new T.MeshStandardMaterial({color:'#c48a25',roughness:.85}));
+    this.head.add(this.mouth);
+
+    // Tapered tail, rooted into the hips instead of a constant-width tube.
+    this.tail=new T.Group();this.tail.position.set(0,-1.62,-.84);dragon.add(this.tail);
+    const tailPath=new T.CatmullRomCurve3([new T.Vector3(0,0,0),new T.Vector3(0,-.12,-.7),
+      new T.Vector3(0,-.03,-1.4),new T.Vector3(0,.23,-1.94)]);
+    const tailGeo=new T.TubeGeometry(tailPath,32,1,20,false), tp=tailGeo.attributes.position;
+    for(let i=0;i<=32;i++){
+      const t=i/32, center=tailPath.getPointAt(t),radius=.43*Math.pow(1-t,.8)+.015;
+      for(let j=0;j<=20;j++){
+        const k=i*21+j;tp.setXYZ(k,center.x+(tp.getX(k)-center.x)*radius,
+          center.y+(tp.getY(k)-center.y)*radius,center.z+(tp.getZ(k)-center.z)*radius);
+      }
+    }
+    tailGeo.computeVertexNormals();this.tail.add(new T.Mesh(tailGeo,skin));
+    const ridge=new T.MeshStandardMaterial({color:'#e6a722',roughness:.72});
+    for(let i=0;i<4;i++){
+      const spike=new T.Mesh(new T.ConeGeometry(.17,.30,16),ridge);
+      const y=.3-i*.54;
+      let radius=1;
+      for(let j=1;j<torso.points.length;j++){
+        const a=torso.points[j-1],b=torso.points[j];
+        if(y>=a.y&&y<=b.y){radius=T.MathUtils.lerp(a.x,b.x,(y-a.y)/(b.y-a.y));break;}
+      }
+      spike.position.set(0,y,-radius*.79-.035);spike.rotation.x=-Math.PI/2;dragon.add(spike);
+    }
+    this.wings=[];
+    return dragon;
   }
 
   makeCity() {
@@ -823,9 +793,9 @@ class FlightWorld {
     this.hero.rotation.set(
       -s.vy * 0.002 * facing,
       yaw + steerYaw,
-      -bank + rollAngle * facing,
+      -bank + rollAngle * facing + (s.calibrating ? -s.steer * 0.25 : 0),
     );
-    const pumping = s.thrust > 0 && !ready;
+    const pumping = s.calibrating || (s.thrust > 0 && !ready);
     this.leftArm.rotation.z = pumping
       ? -0.65 + Math.sin(s.time * 10) * 0.13
       : -0.1;
@@ -840,13 +810,13 @@ class FlightWorld {
         side * (pumping ? 0.15 + Math.cos(s.time * 14) * 0.25 : -0.25);
     });
     this.head.rotation.z = Math.sin(s.time * 2) * 0.035;
-    if (ready && !this.reducedMotion) {
+    if (ready && !s.calibrating && !this.reducedMotion) {
       const greeting = s.time % 8 < 2.6 || s.time < (s.greetUntil || 0);
       this.rightArm.rotation.z = greeting ? 2.25 + Math.sin(s.time * 12) * 0.26 : 0.15;
       this.leftArm.rotation.z = -0.15 - Math.sin(s.time * 2) * 0.08;
       this.head.rotation.z = Math.sin(s.time * 1.6) * (greeting ? 0.07 : 0.025);
-      this.mouth.scale.y = greeting ? 0.27 + Math.sin(s.time * 5) * 0.04 : 0.17;
-    } else this.mouth.scale.y = 0.24;
+      this.mouth.scale.y = 1;
+    } else this.mouth.scale.y = 1;
     this.head.rotation.y = ready
       ? 0
       : Math.max(-0.22, Math.min(0.22, s.vx * 0.004)) * facing;
@@ -854,7 +824,7 @@ class FlightWorld {
     this.rightArm.rotation.z -= Math.min(0, s.vx) * 0.007;
     this.tail.rotation.z = Math.sin(s.time * 7) * (pumping ? 0.22 : 0.08);
     const blink = s.time % 4.7 < 0.13 ? 0.12 : 1;
-    this.eyes.forEach((m, i) => (m.scale.y = m.userData.openScaleY * (ready && s.time < (s.greetUntil || 0) && i < 4 ? 0.12 : blink)));
+    this.eyes.forEach((m, i) => (m.scale.y = m.userData.openScaleY * (ready && s.time < (s.greetUntil || 0) && i < 5 ? 0.12 : blink)));
     this.bubble.position.copy(this.hero.position);
     this.bubble.visible = s.shield > 0 || s.dash > 0;
     this.bubble.material.opacity = s.dash > 0 ? 0.12 : 0.22;

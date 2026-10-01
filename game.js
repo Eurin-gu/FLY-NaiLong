@@ -171,33 +171,36 @@
     }
   }
   // ---- 新手教程：只给第一次进游戏的人看，跟着动作自动推进 ----
-  const TUTORIAL_KEY = "nailong-tutorial-done";
+  const TUTORIAL_KEY = "nailong-tutorial-v2-done";
   let tutorialSeen = false;
   try {
     tutorialSeen = localStorage.getItem(TUTORIAL_KEY) === "1";
   } catch {}
   let tutorialStep = -1;
+  let practiceX = 0;
   const tutorialSteps = [
-    { text: "按住空格或屏幕 —— 扇翅往上飞", done: () => s.altitude > 40 },
-    { text: "左右拖动画面 —— 控制方向", done: () => Math.abs(s.x) > 12 },
-    { text: "穿过金色甜甜圈加分；撞到东西会掉血", done: () => s.score > 0 },
+    { text: "扇动双臂，让奶龙飞起来 ↑", done: () => s.altitude > 40 },
+    { text: "身体往左歪一下 ←", done: () => s.x < practiceX - 10 },
+    { text: "再往右歪一下 →", done: () => s.x > practiceX + 10 },
+    { text: "对准金色光环，穿过去！", done: () => s.rings > 0 },
   ];
   function endTutorial() {
     tutorialSeen = true;
     tutorialStep = -1;
+    document.body.classList.remove("learning");
     $("tutorial").hidden = true;
-    try {
-      localStorage.setItem(TUTORIAL_KEY, "1");
-    } catch {}
+    s.spawnProtection = 3;
+    try { localStorage.setItem(TUTORIAL_KEY, "1"); } catch {}
   }
   function startTutorial() {
     if (tutorialSeen) return;
-    if (matchMedia("(max-width: 760px)").matches) {
-      tutorialSteps[0].text = s.camera ? "对着镜头连续扇动双臂，飞起来" : "按住画面，向上滑动飞起来";
-      tutorialSteps[1].text = s.camera ? "左右倾斜身体，改变飞行方向" : "左右拖动画面，改变飞行方向";
-    }
+    const mobile = matchMedia("(max-width: 760px)").matches;
+    tutorialSteps[0].text = s.camera ? "扇动双臂，让奶龙飞起来 ↑" : mobile ? "按住画面，让奶龙飞起来 ↑" : "按住空格，让奶龙飞起来 ↑";
+    tutorialSteps[1].text = s.camera ? "身体往左歪一下 ←" : mobile ? "按住画面，向左拖动 ←" : "按 A 或 ←，往左飞";
+    tutorialSteps[2].text = s.camera ? "再往右歪一下 →" : mobile ? "按住画面，向右拖动 →" : "按 D 或 →，往右飞";
     tutorialStep = 0;
-    $("tutorialStep").textContent = "1";
+    document.body.classList.add("learning");
+    $("tutorialStep").textContent = "1 / 4";
     $("tutorialText").textContent = tutorialSteps[0].text;
     $("tutorial").hidden = false;
   }
@@ -205,12 +208,18 @@
     if (tutorialStep < 0 || s.mode !== "running") return;
     if (!tutorialSteps[tutorialStep].done()) return;
     tutorialStep += 1;
+    practiceX = s.x;
     if (tutorialStep >= tutorialSteps.length) {
       endTutorial();
-      toast("教程结束 —— 剩下的自己浪吧！");
+      toast("会飞了！！！三秒后正式出发，技能按钮已解锁。");
       return;
     }
-    $("tutorialStep").textContent = String(tutorialStep + 1);
+    if (tutorialStep === 3) {
+      objects.forEach((o) => world.remove(o));
+      objects = [];
+      nextGate = s.distance;
+    }
+    $("tutorialStep").textContent = String(tutorialStep + 1) + " / 4";
     $("tutorialText").textContent = tutorialSteps[tutorialStep].text;
     beep(560);
   }
@@ -312,12 +321,14 @@
   }
   function start() {
     if (!world || !cameraAvailable) return;
+    overlayStep = "done";
     saveRecord();
     clearInput();
     objects.forEach((o) => world.remove(o));
     objects = [];
     Object.assign(s, {
       mode: "running",
+      calibrating: false,
       menuPreview: false,
       rings: 0,
       peak: 18,
@@ -330,7 +341,7 @@
       score: 0,
       hp: 3,
       invincible: 2,
-      spawnProtection: 10,
+      spawnProtection: tutorialSeen ? 10 : 30,
       shield: 0,
       dash: 0,
       roll: 0,
@@ -363,7 +374,7 @@
     document.body.classList.remove("choosing-mode");
     $("startBtn").blur();
     toast(matchMedia("(max-width: 760px)").matches && !s.camera
-      ? "摄像头不可用，已切换触屏：按住画面上升，左右拖动转向。"
+      ? "按住画面上升，左右拖动转向。"
       : "开局保护 10 秒，扇翅起飞！");
     startTutorial();
     hud();
@@ -374,8 +385,75 @@
   let overlayStep = "intro";
   document.body.dataset.screen = "intro";
   document.body.classList.add("preflight");
-  let setupControl = matchMedia("(max-width: 760px)").matches ? "camera" : "manual";
+  let setupControl = "camera";
   let poseReady = false;
+  const calibration = { step: 0, flaps: 0, since: 0, hold: 0, last: 0 };
+  $("manualStart").addEventListener("click", () => {
+    launching = false;
+    stopCamera();
+    setupControl = "manual";
+    s.calibrating = false;
+    s.flight = "free";
+    $("startBtn").disabled = false;
+    start();
+  });
+  async function beginCalibration() {
+    if (launching) return;
+    launching = true;
+    setupControl = "camera";
+    s.flight = "free";
+    overlayStep = "calibration";
+    s.calibrating = true;
+    document.body.dataset.screen = "calibration";
+    $("overlayModes").hidden = true;
+    $("overlayTag").textContent = "起飞前 · 跟着做";
+    $("overlayTitle").textContent = "跟我扇两下翅膀";
+    $("overlayDescription").textContent = "双手抬起，再放下。识别到动作就会亮灯。";
+    $("startBtn").disabled = true;
+    $("startBtn").textContent = "等待你的动作…";
+    $("setupCameraView").hidden = false;
+    Object.assign(calibration, { step: 0, flaps: 0, since: 0, hold: 0, last: 0 });
+    const ready = await enableCamera();
+    launching = false;
+    if (overlayStep !== "calibration") return;
+    if (!ready) {
+      $("overlayTitle").textContent = "先用手指飞一圈";
+      $("overlayDescription").textContent = "摄像头未能连接。可以直接使用触屏或键盘试玩。";
+      $("startBtn").disabled = false;
+      $("startBtn").textContent = "重新开启摄像头";
+      overlayStep = "intro";
+    }
+  }
+  function updateCalibration(now, framed) {
+    if (overlayStep !== "calibration") return;
+    const delta = calibration.last ? Math.min(now - calibration.last, 150) : 0;
+    calibration.last = now;
+    if (!framed) { calibration.hold = 0; calibration.since = 0; return; }
+    if (calibration.step === 0 && calibration.flaps >= 2) {
+      calibration.step = 1;
+      neutralTilt = currentTilt;
+      $("overlayTitle").textContent = "会飞了！往左歪一下";
+      $("overlayDescription").textContent = "肩膀轻轻往左倾，保持一小会儿。";
+      $("guideDemo").dataset.demo = "steer";
+      beep(660);
+    } else if (calibration.step === 1 || calibration.step === 2) {
+      const correct = calibration.step === 1 ? s.steer < -0.25 : s.steer > 0.25;
+      calibration.hold = correct ? calibration.hold + delta : 0;
+      if (calibration.hold > 450) {
+        calibration.step += 1;
+        calibration.hold = 0;
+        $("overlayTitle").textContent = calibration.step === 2 ? "再往右歪一下" : "完美，准备出发！";
+        $("overlayDescription").textContent = calibration.step === 2 ? "肩膀往右倾，奶龙就往右飞。" : "接下来放心练习，先学会飞，再遇到敌人。";
+        beep(760);
+      }
+    } else if (calibration.step === 3) {
+      calibration.since ||= now;
+      const left = 3 - Math.floor((now - calibration.since) / 1000);
+      $("startBtn").textContent = left > 0 ? String(left) + " · 准备起飞" : "起飞！";
+      if (left <= 0) { overlayStep = "done"; start(); }
+    }
+    $("guideStatus").textContent = calibration.step === 0 ? "扇翅 " + Math.min(2, calibration.flaps) + " / 2" : calibration.step === 1 ? "左倾 ←" : calibration.step === 2 ? "右倾 →" : "动作完成 ✓";
+  }
   function syncSetupControl() {
     $("setupManual").setAttribute("aria-pressed", String(setupControl === "manual"));
     $("setupCamera").setAttribute("aria-pressed", String(setupControl === "camera"));
@@ -387,6 +465,7 @@
     $("changeModeBtn").hidden = true;
     $("resultGoal").hidden = true;
     s.menuPreview = true;
+    s.calibrating = false;
     document.body.dataset.screen = "setup";
     $("setupBack").hidden = false;
     $("resultStats").hidden = true;
@@ -702,13 +781,14 @@
   function spawnTargets() {
     const d = s.distance + 240;
     const targetY = Math.max(18, s.altitude + s.vy * 1.8 + 18);
-    const targetX = s.x + Math.sin(s.distance * 0.002) * 18;
+    const targetX = tutorialStep >= 0 ? s.x : s.x + Math.sin(s.distance * 0.002) * 18;
     const ring = world.addRing({ type: "ring", x: targetX, y: targetY, d });
+    if (tutorialStep >= 0) ring.mesh.scale.setScalar(2);
     objects.push(ring);
-    for (let i = 0; i < 3; i++)
+    if (tutorialStep < 0) for (let i = 0; i < 3; i++)
       objects.push(world.addBird({type: "bird", x: targetX + (i-1)*12,
         y: Math.max(10,targetY + (i%2 ? 8 : -8)), d: d+28+i*22}));
-    for (let i = 0; i < 2; i++)
+    if (tutorialStep < 0) for (let i = 0; i < 2; i++)
       objects.push(
         world.addDrone({
           type: "drone",
@@ -726,6 +806,7 @@
     }
     if (s.mode !== "running") return;
     s.time += dt;
+    if (tutorialStep >= 0) s.spawnProtection = 30;
     const protectedFrame = s.spawnProtection > 0;
     s.spawnProtection = Math.max(0, s.spawnProtection - dt);
     if (s.chase && s.chase.reason !== "ground") { updateChase(dt); hud(); return; }
@@ -814,7 +895,7 @@
       const crossX = before.x + (s.x - before.x) * fraction;
       const crossY = before.y + (s.altitude - before.y) * fraction;
       if (o.type === "ring" && crossing) {
-        if (Math.hypot(crossX - o.x, crossY - o.y) < 7.2) {
+        if (Math.hypot(crossX - o.x, crossY - o.y) < (tutorialStep >= 0 ? 14.4 : 7.2)) {
           s.combo++;
           s.rings++;
           s.celebration = 0.7;
@@ -899,7 +980,7 @@
       const warning = s.groundTime > 0;
       $("chase").hidden = !(s.spawnProtection > 0 || warning);
       if (s.spawnProtection > 0) {
-        $("chaseText").textContent = `开局保护 ${Math.ceil(s.spawnProtection)} 秒 · 放心练习扇翅`;
+        $("chaseText").textContent = `${tutorialStep >= 0 ? "练习中 · 不会掉血，放心试" : "起飞保护 " + Math.ceil(s.spawnProtection) + " 秒"}`;
         $("chaseBar").style.width = `${s.spawnProtection * 10}%`;
       } else if (warning) {
         const seconds = Math.max(1, Math.ceil(3 - s.groundTime));
@@ -979,10 +1060,10 @@
     $("overlayModes").hidden = true;
     $("setupBack").hidden = true;
     $("overlayTag").textContent = "今日宜：一飞冲天";
-    $("overlayTitle").innerHTML = "小翅膀，<br />大动静。";
+    $("overlayTitle").innerHTML = "举起双手，<br />一起飞。";
     $("overlayDescription").innerHTML = "你负责扇，我负责飞。<br />至于怎么飞的……别问。";
     $("startBtn").disabled = false;
-    $("startBtn").innerHTML = "开始游戏 <span aria-hidden=\"true\">↗</span>";
+    $("startBtn").innerHTML = "开启摄像头 <span aria-hidden=\"true\">↗</span>";
   });
   $("startBtn").addEventListener("click", async () => {
     if (s.mode === "paused") {
@@ -991,9 +1072,10 @@
     }
     // 开局第一步：先弹出飞行方式选择，第二次点击才真正起飞。
     if (overlayStep === "intro") {
-      showModeStep();
+      await beginCalibration();
       return;
     }
+    if (overlayStep === "calibration") return;
     // A replay keeps the last flight and control choices; changing them is a
     // separate action on the result card.
     if (!s.flight || launching) return;
@@ -1176,6 +1258,7 @@
   function stopCamera() {
     cameraGeneration++;
     poseReady = false;
+    $("poseLive").hidden = true;
     s.camera = false;
     s.gesture = false;
     s.flapUntil = 0;
@@ -1320,7 +1403,7 @@
       return "转向已就绪 · 请让双臂入镜后扇动";
     }
     // 技能造型优先于扇翅：命中时清掉扇翅累计，避免"举手"被读成"扇动"。
-    const skillPose = detectSkillPose(lm, width, now);
+    const skillPose = s.mode === "running" && tutorialStep < 0 ? detectSkillPose(lm, width, now) : null;
     if (skillPose) {
       previousHands = null;
       gestureArmed = false;
@@ -1373,6 +1456,7 @@
         s.gesture = true;
         fired = true;
       }
+      if (overlayStep === "calibration" && calibration.step === 0) calibration.flaps += 1;
       lastGestureFlap = now;
       gestureArmed = false;
     }
@@ -1522,6 +1606,13 @@
           ? "请退后，让肩膀入镜"
           : !handsSeen ? "再退后，让双手入镜" : "双臂已入镜 · 可以起飞";
         $("setupCameraFeedback").textContent = framing;
+        $("poseLive").hidden = s.mode !== "running";
+        $("poseLive").textContent = shoulderSeen && handsSeen ? text : framing;
+        const leftSeen = landmarks?.[15]?.visibility > 0.4;
+        const rightSeen = landmarks?.[16]?.visibility > 0.4;
+        $("poseSignals").textContent = (shoulderSeen ? "● 肩膀" : "○ 肩膀") + "  " + (leftSeen ? "● 左手" : "○ 左手") + "  " + (rightSeen ? "● 右手" : "○ 右手");
+        $("poseSignals").dataset.ready = String(Boolean(shoulderSeen && handsSeen));
+        updateCalibration(now, shoulderSeen && handsSeen);
         if (overlayStep === "modes" && setupControl === "camera") {
           const hint = !shoulderSeen
             ? "识别已启动，但没看到肩膀；请后退一步。"
