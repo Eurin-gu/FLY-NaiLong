@@ -1,3 +1,37 @@
+/* 天气 / 时段预设。每套定义天空渐变、雾、光照、云色，外加降水与闪电强度；
+   切换时整套参数在 updateWeather() 里插值过渡，所以是渐变而不是硬切。 */
+const WEATHER_PRESETS = [
+  { key: "clear", label: "晴空",
+    skyTop: "#4f9fe0", skyBottom: "#d3ecf4", fogColor: "#cce4e8", fogNear: 170, fogFar: 680,
+    hemiSky: "#f6fbff", hemiGround: "#87a26f", hemiPower: 2.5,
+    sunColor: "#fff2cd", sunPower: 3.2, sunDir: [-30, 70, 40],
+    cloudColor: "#f6fbf6", discColor: "#fff6d8", disc: 0.35, discSize: 90,
+    stars: 0, rain: 0, rainSpeed: 0, rainLen: 0, rainDrift: 0, rainColor: "#cfe6ff", lightning: 0 },
+  { key: "sunset", label: "落日",
+    skyTop: "#2f4f92", skyBottom: "#ffb173", fogColor: "#f2bd90", fogNear: 150, fogFar: 600,
+    hemiSky: "#ffd9ac", hemiGround: "#7a5a46", hemiPower: 2.1,
+    sunColor: "#ffb765", sunPower: 3.8, sunDir: [-210, 30, -140],
+    cloudColor: "#ffe2c8", discColor: "#ffd08a", disc: 1, discSize: 150,
+    stars: 0.1, rain: 0, rainSpeed: 0, rainLen: 0, rainDrift: 0, rainColor: "#cfe6ff", lightning: 0 },
+  { key: "storm", label: "雷雨",
+    skyTop: "#232c3b", skyBottom: "#5d6a7e", fogColor: "#5f6b7d", fogNear: 70, fogFar: 380,
+    hemiSky: "#9fb0c6", hemiGround: "#4a5563", hemiPower: 1.5,
+    sunColor: "#b9c6d8", sunPower: 1.1, sunDir: [-90, 60, -80],
+    cloudColor: "#6d7787", discColor: "#cfd8e6", disc: 0, discSize: 90,
+    stars: 0, rain: 1, rainSpeed: 120, rainLen: 6.5, rainDrift: 6, rainColor: "#e2efff", lightning: 0.55 },
+  { key: "night", label: "星夜",
+    skyTop: "#081129", skyBottom: "#2b3f68", fogColor: "#22304f", fogNear: 150, fogFar: 620,
+    hemiSky: "#8fa6d8", hemiGround: "#2a3348", hemiPower: 1.1,
+    sunColor: "#cfe0ff", sunPower: 0.9, sunDir: [120, 90, -150],
+    cloudColor: "#9aa8c4", discColor: "#eef3ff", disc: 0.9, discSize: 70,
+    stars: 1, rain: 0, rainSpeed: 0, rainLen: 0, rainDrift: 0, rainColor: "#cfe6ff", lightning: 0 },
+  { key: "snow", label: "飘雪",
+    skyTop: "#8fa8bf", skyBottom: "#dfe9ef", fogColor: "#dbe6ee", fogNear: 90, fogFar: 430,
+    hemiSky: "#f2f8ff", hemiGround: "#9fae9a", hemiPower: 2.4,
+    sunColor: "#eaf2ff", sunPower: 2.2, sunDir: [-60, 80, -40],
+    cloudColor: "#eef4fa", discColor: "#ffffff", disc: 0.2, discSize: 90,
+    stars: 0, rain: 1, rainSpeed: 16, rainLen: 0.8, rainDrift: 5, rainColor: "#ffffff", lightning: 0 },
+];
 /* A single 3D scene owns the character, particles, targets and collision visuals. */
 class FlightWorld {
   constructor(canvas) {
@@ -15,10 +49,13 @@ class FlightWorld {
     this.renderer.toneMapping = T.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.35;
     this.camera = new T.PerspectiveCamera(58, 1, 0.1, 2500);
-    this.scene.add(new T.HemisphereLight("#f6fbff", "#87a26f", 2.5));
-    const sun = new T.DirectionalLight("#fff2cd", 3.2);
-    sun.position.set(-30, 70, 40);
-    this.scene.add(sun);
+    // 光源要留着引用：天气系统会按预设改颜色、强度和太阳方向
+    this.hemi = new T.HemisphereLight("#f6fbff", "#87a26f", 2.5);
+    this.scene.add(this.hemi);
+    this.sun = new T.DirectionalLight("#fff2cd", 3.2);
+    this.sun.position.set(-30, 70, 40);
+    this.scene.add(this.sun);
+    this.makeWeather(T);
     this.sphere = new T.SphereGeometry(1, 20, 14);
     this.box = new T.BoxGeometry(1, 1, 1);
     this.materials = new Map();
@@ -582,21 +619,266 @@ class FlightWorld {
     }
     return false;
   }
+  /* ---- 天气系统 ----------------------------------------------------------
+     天空渐变穹顶 + 日月精灵 + 星空 + 降水线段 + 闪电，五套预设之间整套插值。 */
+  makeWeather(T) {
+    this.skyUniforms = {
+      topColor: { value: new T.Color("#4f9fe0") },
+      bottomColor: { value: new T.Color("#d3ecf4") },
+      flash: { value: 0 },
+    };
+    this.skyDome = new T.Mesh(
+      new T.SphereGeometry(1600, 24, 16),
+      new T.ShaderMaterial({
+        uniforms: this.skyUniforms,
+        side: T.BackSide,
+        depthWrite: false,
+        fog: false,
+        vertexShader:
+          "varying vec3 vPos;void main(){vPos=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
+        fragmentShader: [
+          "uniform vec3 topColor;",
+          "uniform vec3 bottomColor;",
+          "uniform float flash;",
+          "varying vec3 vPos;",
+          "void main(){",
+          "  float h = normalize(vPos).y;",
+          "  float t = smoothstep(-0.14, 0.62, h);",
+          "  gl_FragColor = vec4(mix(bottomColor, topColor, t) + flash, 1.0);",
+          "}",
+        ].join("\n"),
+      }),
+    );
+    this.skyDome.renderOrder = -10;
+    this.skyDome.frustumCulled = false;
+    this.scene.add(this.skyDome);
+
+    // 太阳 / 月亮：径向渐变贴图做成精灵，永远正对镜头
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+    const grad = ctx.createRadialGradient(64, 64, 2, 64, 64, 62);
+    grad.addColorStop(0, "rgba(255,255,255,1)");
+    grad.addColorStop(0.32, "rgba(255,246,214,0.9)");
+    grad.addColorStop(1, "rgba(255,238,196,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
+    const tex = new T.CanvasTexture(canvas);
+    tex.colorSpace = T.SRGBColorSpace;
+    this.sunSprite = new T.Sprite(
+      new T.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false, opacity: 0 }),
+    );
+    this.sunSprite.visible = false;
+    this.scene.add(this.sunSprite);
+
+    // 星空
+    const starPos = [];
+    for (let i = 0; i < 620; i++) {
+      const phi = Math.random() * Math.PI * 2;
+      const cosT = 0.06 + Math.random() * 0.9;
+      const sinT = Math.sqrt(1 - cosT * cosT);
+      starPos.push(Math.cos(phi) * sinT * 1450, cosT * 1450, Math.sin(phi) * sinT * 1450);
+    }
+    const starGeo = new T.BufferGeometry();
+    starGeo.setAttribute("position", new T.Float32BufferAttribute(starPos, 3));
+    this.starMaterial = new T.PointsMaterial({
+      color: "#ffffff", size: 5, sizeAttenuation: false,
+      transparent: true, opacity: 0, depthWrite: false, fog: false,
+    });
+    this.stars = new T.Points(starGeo, this.starMaterial);
+    this.stars.visible = false;
+    this.stars.frustumCulled = false;
+    this.scene.add(this.stars);
+
+    // 降水：一套线段系统，雨和雪只是参数不同（快 + 长 = 雨，慢 + 短 = 雪）
+    const COUNT = 1100;
+    this.rainCount = COUNT;
+    this.rainPos = new Float32Array(COUNT * 6);
+    this.rainSeed = new Float32Array(COUNT * 3);
+    for (let i = 0; i < COUNT; i++) {
+      this.rainSeed[i * 3] = Math.random();
+      this.rainSeed[i * 3 + 1] = Math.random();
+      this.rainSeed[i * 3 + 2] = Math.random();
+    }
+    const rainGeo = new T.BufferGeometry();
+    rainGeo.setAttribute("position", new T.BufferAttribute(this.rainPos, 3));
+    this.rainMaterial = new T.LineBasicMaterial({
+      color: "#c8dcf5", transparent: true, opacity: 0, depthWrite: false,
+    });
+    this.rain = new T.LineSegments(rainGeo, this.rainMaterial);
+    this.rain.visible = false;
+    this.rain.frustumCulled = false;
+    this.scene.add(this.rain);
+
+    this.weather = null;
+    this.weatherTarget = null;
+    this.weatherIndex = -1;
+    this.flash = 0;
+    this.nextBolt = 3;
+    this.onLightning = null;
+  }
+
+  buildWeather(preset) {
+    const T = THREE;
+    return {
+      skyTop: new T.Color(preset.skyTop),
+      skyBottom: new T.Color(preset.skyBottom),
+      fogColor: new T.Color(preset.fogColor),
+      fogNear: preset.fogNear,
+      fogFar: preset.fogFar,
+      hemiSky: new T.Color(preset.hemiSky),
+      hemiGround: new T.Color(preset.hemiGround),
+      hemiPower: preset.hemiPower,
+      sunColor: new T.Color(preset.sunColor),
+      sunPower: preset.sunPower,
+      sunDir: new T.Vector3(preset.sunDir[0], preset.sunDir[1], preset.sunDir[2]).normalize(),
+      cloudColor: new T.Color(preset.cloudColor),
+      discColor: new T.Color(preset.discColor),
+      disc: preset.disc,
+      discSize: preset.discSize,
+      stars: preset.stars,
+      rain: preset.rain,
+      rainSpeed: preset.rainSpeed,
+      rainLen: preset.rainLen,
+      rainDrift: preset.rainDrift,
+      rainColor: new T.Color(preset.rainColor),
+      lightning: preset.lightning,
+    };
+  }
+
+  setWeather(index, instant) {
+    const n = WEATHER_PRESETS.length;
+    this.weatherIndex = ((index % n) + n) % n;
+    const preset = WEATHER_PRESETS[this.weatherIndex];
+    this.weatherTarget = this.buildWeather(preset);
+    if (instant || !this.weather) this.weather = this.buildWeather(preset);
+    return preset;
+  }
+
+  cycleWeather() {
+    return this.setWeather(this.weatherIndex + 1);
+  }
+
+  get weatherLabel() {
+    return (WEATHER_PRESETS[this.weatherIndex] || WEATHER_PRESETS[0]).label;
+  }
+
+  applyWeather() {
+    const w = this.weather;
+    if (!w) return;
+    this.scene.background.copy(w.fogColor);
+    this.scene.fog.color.copy(w.fogColor);
+    this.scene.fog.near = w.fogNear;
+    this.scene.fog.far = w.fogFar;
+    this.hemi.color.copy(w.hemiSky);
+    this.hemi.groundColor.copy(w.hemiGround);
+    this.hemi.intensity = w.hemiPower + this.flash * 2.6;
+    this.sun.color.copy(w.sunColor);
+    this.sun.intensity = w.sunPower + this.flash * 1.8;
+    this.sun.position.copy(w.sunDir).multiplyScalar(140);
+    this.skyUniforms.topColor.value.copy(w.skyTop);
+    this.skyUniforms.bottomColor.value.copy(w.skyBottom);
+    this.skyUniforms.flash.value = this.flash * 0.75;
+    if (this.cloudMaterial) this.cloudMaterial.color.copy(w.cloudColor);
+    this.starMaterial.opacity = w.stars;
+    this.rainMaterial.color.copy(w.rainColor);
+    this.rainMaterial.opacity = w.rain * 0.95;
+  }
+
+  updateWeather(s, dt) {
+    if (!this.weather) this.setWeather(0, true);
+    const cur = this.weather, tgt = this.weatherTarget;
+    const k = this.reducedMotion ? 1 : 1 - Math.exp(-dt * 0.9);
+    for (const key of ["skyTop", "skyBottom", "fogColor", "hemiSky", "hemiGround",
+      "sunColor", "cloudColor", "discColor", "rainColor"]) {
+      cur[key].lerp(tgt[key], k);
+    }
+    for (const key of ["fogNear", "fogFar", "hemiPower", "sunPower", "disc", "discSize",
+      "stars", "rain", "rainSpeed", "rainLen", "rainDrift", "lightning"]) {
+      cur[key] += (tgt[key] - cur[key]) * k;
+    }
+    cur.sunDir.lerp(tgt.sunDir, k).normalize();
+
+    // 闪电：随机间隔打一下，顺便通知外部放雷声
+    this.flash *= Math.exp(-dt * 3.6);
+    if (cur.lightning > 0.05) {
+      this.nextBolt -= dt;
+      if (this.nextBolt <= 0) {
+        this.flash = 1;
+        this.nextBolt = 2.4 + Math.random() * 5.5;
+        if (this.onLightning) this.onLightning();
+      }
+    }
+
+    // 越高天空越深、雾越薄 —— 保留原来"往上蹿就是上天"的感觉
+    const high = Math.min(s.altitude / 3200, 0.3);
+    this.skyUniforms.topColor.value.copy(cur.skyTop).multiplyScalar(1 - high * 0.45);
+    this.skyUniforms.bottomColor.value.copy(cur.skyBottom).multiplyScalar(1 - high * 0.18);
+
+    this.applyWeather();
+
+    // 穹顶 / 星空 / 日月是"贴在天上"的，必须挂在相机身上。
+    // 注意不能用 s.distance：它是累计里程，几秒后就把整片天推到相机背后了。
+    this.skyDome.position.set(s.x, s.altitude, 0);
+    this.stars.position.set(s.x, s.altitude, 0);
+    this.stars.visible = cur.stars > 0.02;
+    if (this.stars.visible) this.stars.rotation.y += dt * 0.012;
+
+    const discX = s.x + cur.sunDir.x * 1250;
+    const discY = s.altitude + cur.sunDir.y * 1250;
+    const discZ = cur.sunDir.z * 1250;
+    this.sunSprite.position.set(discX, discY, discZ);
+    this.sunSprite.material.color.copy(cur.discColor);
+    this.sunSprite.material.opacity = cur.disc;
+    this.sunSprite.scale.setScalar(cur.discSize);
+    this.sunSprite.visible = cur.disc > 0.02;
+
+    // 降水
+    this.rain.visible = cur.rain > 0.02;
+    if (this.rain.visible) {
+      const SPAN_X = 160, SPAN_Y = 170, SPAN_Z = 240;
+      // 世界是朝相机流动的，雨幕也要跟着流：z 每帧朝镜头推进，越过就绕回远处。
+      // 用每滴自己的随机 z，所以不会有"整片雨一起跳"的破绽。
+      const worldSpeed = Math.min(400, Math.max(0, (s.distance - (this.lastDistance ?? s.distance)) / Math.max(dt, 1e-3)));
+      this.lastDistance = s.distance;
+      const fall = (cur.rainSpeed * dt) / SPAN_Y;
+      const flow = (worldSpeed * dt) / SPAN_Z;
+      const arr = this.rainPos, seed = this.rainSeed;
+      for (let i = 0; i < this.rainCount; i++) {
+        const b = i * 6;
+        let y = seed[i * 3 + 1] - fall;
+        if (y < 0) y += 1;
+        seed[i * 3 + 1] = y;
+        let zr = seed[i * 3 + 2] - flow;
+        if (zr < 0) zr += 1;
+        seed[i * 3 + 2] = zr;
+        const drift = Math.sin(s.time * 1.3 + i * 0.7) * cur.rainDrift;
+        const x = s.x + (seed[i * 3] - 0.5) * SPAN_X + drift;
+        const z = -10 - zr * SPAN_Z;
+        const py = s.altitude - 45 + y * SPAN_Y;
+        arr[b] = x;
+        arr[b + 1] = py;
+        arr[b + 2] = z;
+        arr[b + 3] = x + drift * 0.05;
+        arr[b + 4] = py + cur.rainLen;
+        arr[b + 5] = z + (cur.rainSpeed > 40 ? 1.4 : 0.15);
+      }
+      this.rain.geometry.attributes.position.needsUpdate = true;
+    }
+  }
+
   makeClouds() {
+    // 云单独用一个材质实例，天气系统才能整体染色（雨云发灰、落日发暖）
+    this.cloudMaterial = new THREE.MeshStandardMaterial({ color: "#f6fbf6", roughness: 0.9 });
     this.clouds = [];
     for (let i = 0; i < 32; i++) {
       const g = new THREE.Group();
-      for (let j = 0; j < 4; j++)
-        this.ball(
-          g,
-          "#f6fbf6",
-          (j - 1.5) * 7,
-          Math.sin(j * 2) * 3,
-          0,
-          8,
-          4 + (j % 2) * 2,
-          5,
-        );
+      for (let j = 0; j < 4; j++) {
+        const puff = new THREE.Mesh(this.sphere, this.cloudMaterial);
+        puff.position.set((j - 1.5) * 7, Math.sin(j * 2) * 3, 0);
+        puff.scale.set(8, 4 + (j % 2) * 2, 5);
+        g.add(puff);
+      }
       this.scene.add(g);
       this.clouds.push(g);
     }
@@ -781,13 +1063,7 @@ class FlightWorld {
       this.copRed.visible = blink;
       this.copBlue.visible = !blink;
     }
-    const sky = new T.Color().setHSL(
-      0.55 + (Math.min(s.altitude, 1800) / 1800) * 0.03,
-      0.44,
-      0.82 - Math.min(s.altitude / 3500, 0.24),
-    );
-    this.scene.background.copy(sky);
-    this.scene.fog.color.copy(sky);
+    this.updateWeather(s, visualDt);
     this.hero.position.set(s.x, s.altitude + Math.sin(s.time * 2.5) * 0.12, 0);
     const modelScale = ready ? (this.width < 761 ? 1.3 : 1.7) : 1;
     const stretch = !this.reducedMotion && s.dash > 0 ? 0.06 : 0;
