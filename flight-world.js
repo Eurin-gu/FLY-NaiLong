@@ -241,7 +241,7 @@ class FlightWorld {
       oval(eye,glint,[-.065,.099,.171],[.043,.047,.014]);
       oval(eye,glint,[.061,-.09,.174],[.017,.02,.009]);
       // The eye is partially embedded in the cheek surface.
-      eye.userData.openScaleY=1;this.eyes.push(eye);
+      eye.userData.openScaleY=1;eye.userData.side=side;this.eyes.push(eye);
 
       const arm=new T.Group();arm.position.set(side*1.24,.17,.02);dragon.add(arm);
       const armShape=lathe([[.001,-1.43],[.21,-1.39],[.35,-1.25],[.41,-.94],
@@ -267,6 +267,12 @@ class FlightWorld {
     this.mouth=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(smile),40,.018,8,false),
       new T.MeshStandardMaterial({color:'#c48a25',roughness:.85}));
     this.head.add(this.mouth);
+    // 鬼脸用的舌头：平时藏起来，做鬼脸时伸出来晃两下
+    this.tongue=new T.Mesh(sphere,new T.MeshStandardMaterial({color:'#ef7d97',roughness:.5}));
+    this.tongue.scale.set(.19,.12,.14);
+    this.tongue.position.set(0,-.72,surface(0,-.72)+.10);
+    this.tongue.visible=false;
+    this.head.add(this.tongue);
 
     // Tapered tail, rooted into the hips instead of a constant-width tube.
     this.tail=new T.Group();this.tail.position.set(0,-1.62,-.84);dragon.add(this.tail);
@@ -815,49 +821,103 @@ class FlightWorld {
     this.rightArm.rotation.z = pumping
       ? 0.65 - Math.sin(s.time * 10) * 0.13
       : 0.1;
-    // 小翅膀：用 rotation.z 做真正的上下扑扇，rotation.y 只做小幅前后扫动
+    // ---- 大厅待机小动作：轮流做，让奶龙看起来是活的 ----
+    let waveK = 0, faceK = 0, stretchK = 0;
+    if (ready && !s.calibrating && !this.reducedMotion) {
+      if (!this.idlePlan) {
+        this.idlePlan = [
+          ["rest", 2.0], ["wave", 3.0], ["face", 2.4],
+          ["rest", 1.4], ["stretch", 2.8], ["wave", 2.4], ["face", 2.0],
+        ];
+      }
+      if (this.idleUntil === undefined || s.time >= this.idleUntil) {
+        this.idleStep = ((this.idleStep === undefined ? -1 : this.idleStep) + 1) % this.idlePlan.length;
+        const [name, hold] = this.idlePlan[this.idleStep];
+        this.idleName = name;
+        this.idleFrom = s.time;
+        this.idleUntil = s.time + hold;
+      }
+      // 戳一下优先用挥手回应
+      const name = s.time < (s.greetUntil || 0) ? "wave" : this.idleName;
+      const span = Math.max(0.2, this.idleUntil - this.idleFrom);
+      const at = Math.min(1, Math.max(0, (s.time - this.idleFrom) / span));
+      const env = Math.pow(Math.sin(Math.PI * at), 0.7); // 起手 → 收势的包络
+      if (name === "wave") waveK = env;
+      else if (name === "face") faceK = env;
+      else if (name === "stretch") stretchK = env;
+    }
+
+    // ---- 翅膀：两个频率叠加 + 平滑追赶，扇起来有惯性，不像节拍器 ----
+    if (!this.wingAngle) {
+      this.wingAngle = [0, 0];
+      this.wingSweep = [0, 0];
+    }
+    const wingBeat = s.time * 12.5;
     this.wings.forEach((wing, i) => {
       const side = i === 0 ? -1 : 1;
-      const beat = s.time * 13 + i * 0.45;
-      // 待机时也慢慢扇，并且抬起来一点：不然从正面会被手臂挡住，看不出是翅膀
-      const idle = Math.sin(s.time * 3.2 + i * 0.9) * 0.16;
-      wing.rotation.y = side * (pumping ? 0.3 + Math.sin(beat) * 0.42 : 0.5);
-      wing.rotation.z =
-        side * (pumping ? 0.22 + Math.cos(beat) * 0.6 : 0.3 + idle);
-    });
-    this.head.rotation.z = Math.sin(s.time * 2) * 0.035;
-    // 准备界面：每隔几秒举起右爪打招呼，爪子左右摆 + 歪头 + 眯眼
-    let greeting = false;
-    if (ready && !s.calibrating && !this.reducedMotion) {
-      greeting = s.time % 6.4 < 2.8 || s.time < (s.greetUntil || 0);
-      if (greeting) {
-        this.rightArm.rotation.z = 2.28 + Math.sin(s.time * 11) * 0.3;
-        this.rightArm.rotation.x = Math.sin(s.time * 11 + 1.2) * 0.24;
-        this.leftArm.rotation.z = -0.42 - Math.sin(s.time * 11) * 0.06;
-        this.head.rotation.z = Math.sin(s.time * 1.6) * 0.1;
+      const phase = wingBeat + i * 0.55;
+      const swing = Math.sin(phase) * 0.46 + Math.sin(phase * 0.43 + i * 1.7) * 0.17;
+      let targetZ, targetY, targetX;
+      if (pumping) {
+        targetZ = 0.26 + swing;
+        targetY = 0.30 + Math.sin(phase + 1.1) * 0.34;
+        targetX = Math.sin(phase * 0.8 + i * 2.1) * 0.24;
       } else {
-        this.rightArm.rotation.z = 0.15;
-        this.rightArm.rotation.x = 0;
-        this.leftArm.rotation.z = -0.15 - Math.sin(s.time * 2) * 0.08;
-        this.head.rotation.z = Math.sin(s.time * 1.6) * 0.025;
+        // 待机：微微上扬 + 慢呼吸 + 一点小抖；展翅动作时高高张开
+        const breathe = Math.sin(s.time * 2.6 + i * 1.1) * 0.20;
+        const jitter = Math.sin(s.time * 5.1 + i * 2.3) * 0.06;
+        targetZ = 0.32 + breathe + jitter + stretchK * 0.6;
+        targetY = 0.50 - stretchK * 0.42 + Math.sin(s.time * 1.7 + i) * 0.12;
+        targetX = Math.sin(s.time * 1.9 + i * 2.4) * 0.10 - stretchK * 0.12;
       }
-      this.mouth.scale.y = 1;
-    } else this.mouth.scale.y = 1;
-    this.head.rotation.y = ready
-      ? 0
-      : Math.max(-0.22, Math.min(0.22, s.vx * 0.004)) * facing;
+      const k = 1 - Math.exp(-visualDt * (pumping ? 22 : 9));
+      this.wingAngle[i] += (targetZ - this.wingAngle[i]) * k;
+      this.wingSweep[i] += (targetY - this.wingSweep[i]) * k;
+      wing.rotation.z = side * this.wingAngle[i];
+      wing.rotation.y = side * this.wingSweep[i];
+      wing.rotation.x = targetX;
+    });
+
+    // ---- 手臂 / 头：待机放松、挥手、展翅 ----
+    if (ready && !s.calibrating && !this.reducedMotion) {
+      this.rightArm.rotation.z =
+        0.15 + waveK * (2.13 + Math.sin(s.time * 11) * 0.3) + stretchK * 2.2;
+      this.rightArm.rotation.x = waveK * Math.sin(s.time * 11 + 1.2) * 0.24;
+      this.leftArm.rotation.z =
+        -0.15 - Math.sin(s.time * 2) * 0.08 - waveK * 0.27 - stretchK * 2.2;
+      this.head.rotation.z =
+        Math.sin(s.time * 1.6) * 0.025 +
+        waveK * Math.sin(s.time * 1.6) * 0.075 +
+        faceK * Math.sin(s.time * 9) * 0.05;
+      this.head.rotation.y = 0;
+      this.head.rotation.x = faceK * -0.06;
+    } else {
+      this.head.rotation.y = Math.max(-0.22, Math.min(0.22, s.vx * 0.004)) * facing;
+      this.head.rotation.x = 0;
+      this.rightArm.rotation.x = 0;
+    }
     this.leftArm.rotation.z -= Math.max(0, s.vx) * 0.007;
     this.rightArm.rotation.z -= Math.min(0, s.vx) * 0.007;
     this.tail.rotation.z = Math.sin(s.time * 7) * (pumping ? 0.22 : 0.08);
+
+    // ---- 鬼脸：斗鸡眼 + 吐舌头 + 脸被挤扁 ----
+    this.head.scale.set(1 + faceK * 0.06, 1 - faceK * 0.08, 1);
+    this.tongue.visible = faceK > 0.12;
+    this.tongue.scale.set(0.19, 0.12 * (0.5 + faceK * 0.8), 0.14);
+    this.tongue.rotation.z = Math.sin(s.time * 13) * 0.25 * faceK;
     const blink = s.time % 4.7 < 0.13 ? 0.12 : 1;
-    this.eyes.forEach((m, i) => {
+    this.eyes.forEach((m) => {
+      const side = m.userData.side || 1;
+      m.rotation.y = side * (0.21 - faceK * 0.85); // 眼珠往里转 = 斗鸡眼
       const wink =
-        ready && i < 5
+        ready && !s.calibrating
           ? s.time < (s.greetUntil || 0)
             ? 0.14
-            : greeting
-              ? 0.55
-              : 1
+            : faceK > 0.3
+              ? 0.3
+              : waveK > 0.3
+                ? 0.55
+                : 1
           : 1;
       m.scale.y = m.userData.openScaleY * blink * wink;
     });
