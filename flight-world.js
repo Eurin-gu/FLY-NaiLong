@@ -292,7 +292,20 @@ class FlightWorld {
       }
       spike.position.set(0,y,-radius*.79-.035);spike.rotation.x=-Math.PI/2;dragon.add(spike);
     }
-    this.wings=[];
+    // 一对小翅膀。奶龙本体原本没有翅膀，补上之后背对镜头飞行时一眼能看出来。
+    // 三片羽瓣由内到外变小、颜色比身体浅，免得糊成一团。
+    this.wings = [];
+    const wingSkin = new T.MeshStandardMaterial({ color: '#fff1c2', roughness: .58 });
+    const wingTip = new T.MeshStandardMaterial({ color: '#f6d68a', roughness: .66 });
+    for (const side of [-1, 1]) {
+      const wing = new T.Group();
+      wing.position.set(side * .84, .42, -.62);   // 肩后，根部略埋进身体
+      dragon.add(wing);
+      oval(wing, wingSkin, [side * .45, .02, .04], [.74, .32, .26]);
+      oval(wing, wingTip, [side * 1.06, .13, .01], [.62, .27, .22]);
+      oval(wing, wingSkin, [side * 1.58, .25, -.03], [.44, .21, .17]);
+      this.wings.push(wing);
+    }
     return dragon;
   }
 
@@ -802,19 +815,32 @@ class FlightWorld {
     this.rightArm.rotation.z = pumping
       ? 0.65 - Math.sin(s.time * 10) * 0.13
       : 0.1;
+    // 小翅膀：用 rotation.z 做真正的上下扑扇，rotation.y 只做小幅前后扫动
     this.wings.forEach((wing, i) => {
       const side = i === 0 ? -1 : 1;
-      wing.rotation.y =
-        side * (pumping ? 0.35 + Math.sin(s.time * 14) * 0.75 : 1.05);
+      const beat = s.time * 13 + i * 0.45;
+      // 待机时也慢慢扇，并且抬起来一点：不然从正面会被手臂挡住，看不出是翅膀
+      const idle = Math.sin(s.time * 3.2 + i * 0.9) * 0.16;
+      wing.rotation.y = side * (pumping ? 0.3 + Math.sin(beat) * 0.42 : 0.5);
       wing.rotation.z =
-        side * (pumping ? 0.15 + Math.cos(s.time * 14) * 0.25 : -0.25);
+        side * (pumping ? 0.22 + Math.cos(beat) * 0.6 : 0.3 + idle);
     });
     this.head.rotation.z = Math.sin(s.time * 2) * 0.035;
+    // 准备界面：每隔几秒举起右爪打招呼，爪子左右摆 + 歪头 + 眯眼
+    let greeting = false;
     if (ready && !s.calibrating && !this.reducedMotion) {
-      const greeting = s.time % 8 < 2.6 || s.time < (s.greetUntil || 0);
-      this.rightArm.rotation.z = greeting ? 2.25 + Math.sin(s.time * 12) * 0.26 : 0.15;
-      this.leftArm.rotation.z = -0.15 - Math.sin(s.time * 2) * 0.08;
-      this.head.rotation.z = Math.sin(s.time * 1.6) * (greeting ? 0.07 : 0.025);
+      greeting = s.time % 6.4 < 2.8 || s.time < (s.greetUntil || 0);
+      if (greeting) {
+        this.rightArm.rotation.z = 2.28 + Math.sin(s.time * 11) * 0.3;
+        this.rightArm.rotation.x = Math.sin(s.time * 11 + 1.2) * 0.24;
+        this.leftArm.rotation.z = -0.42 - Math.sin(s.time * 11) * 0.06;
+        this.head.rotation.z = Math.sin(s.time * 1.6) * 0.1;
+      } else {
+        this.rightArm.rotation.z = 0.15;
+        this.rightArm.rotation.x = 0;
+        this.leftArm.rotation.z = -0.15 - Math.sin(s.time * 2) * 0.08;
+        this.head.rotation.z = Math.sin(s.time * 1.6) * 0.025;
+      }
       this.mouth.scale.y = 1;
     } else this.mouth.scale.y = 1;
     this.head.rotation.y = ready
@@ -824,7 +850,17 @@ class FlightWorld {
     this.rightArm.rotation.z -= Math.min(0, s.vx) * 0.007;
     this.tail.rotation.z = Math.sin(s.time * 7) * (pumping ? 0.22 : 0.08);
     const blink = s.time % 4.7 < 0.13 ? 0.12 : 1;
-    this.eyes.forEach((m, i) => (m.scale.y = m.userData.openScaleY * (ready && s.time < (s.greetUntil || 0) && i < 5 ? 0.12 : blink)));
+    this.eyes.forEach((m, i) => {
+      const wink =
+        ready && i < 5
+          ? s.time < (s.greetUntil || 0)
+            ? 0.14
+            : greeting
+              ? 0.55
+              : 1
+          : 1;
+      m.scale.y = m.userData.openScaleY * blink * wink;
+    });
     this.bubble.position.copy(this.hero.position);
     this.bubble.visible = s.shield > 0 || s.dash > 0;
     this.bubble.material.opacity = s.dash > 0 ? 0.12 : 0.22;

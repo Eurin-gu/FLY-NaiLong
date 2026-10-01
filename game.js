@@ -1070,7 +1070,7 @@
       pause();
       return;
     }
-    // 开局第一步：先弹出飞行方式选择，第二次点击才真正起飞。
+    // 开局第一步是摄像头校准；校准走完才会进入选玩法。
     if (overlayStep === "intro") {
       await beginCalibration();
       return;
