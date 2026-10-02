@@ -47,6 +47,15 @@ const MIME = {
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
   ".ico": "image/x-icon",
+  // 音频必须是正确的 MIME：<audio> 标签靠它决定能不能播，
+  // 用 application/octet-stream 的话浏览器会直接拒绝播放。
+  ".ogg": "audio/ogg",
+  ".oga": "audio/ogg",
+  ".opus": "audio/ogg",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".m4a": "audio/mp4",
+  ".flac": "audio/flac",
   ".wasm": "application/wasm",
   ".data": "application/octet-stream",
   ".binarypb": "application/octet-stream",
