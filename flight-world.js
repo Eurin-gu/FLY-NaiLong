@@ -454,6 +454,19 @@ class FlightWorld {
       180,
     );
     this.city.add(this.trees);
+    // 穿环时炸开的冲击环（环是一颗一颗过的，一个就够）
+    this.ringWave = new T.Mesh(
+      new T.TorusGeometry(1, 0.055, 8, 48),
+      new T.MeshBasicMaterial({
+        color: "#fff3b0",
+        transparent: true,
+        depthWrite: false,
+        opacity: 0,
+      }),
+    );
+    this.ringWave.visible = false;
+    this.scene.add(this.ringWave);
+    this.ringWaveTime = 0;
     this.matrix = new T.Object3D();
     this.roads = [];
     for (let i = 0; i < 9; i++)
@@ -1332,6 +1345,40 @@ class FlightWorld {
       data.mesh = null;
     }
   }
+  /**
+   * 光环被穿过：碎成一片玻璃雨 + 一圈冲击波，环体本身放大淡出。
+   * 碎片是沿环的半径向外飞的（不是随机四散），看起来才像"被撞碎"。
+   */
+  breakRing(o, distance) {
+    if (!o || o.shatter > 0) return;
+    o.shatterTotal = 0.55;
+    o.shatter = o.shatterTotal;
+    const z = distance - o.d;
+    const ringR = 7.5;
+    for (let i = 0; i < 26; i++) {
+      const p = this.particles.find((q) => q.life <= 0);
+      if (!p) break;
+      const a = (i / 26) * Math.PI * 2 + Math.random() * 0.22;
+      this.launchParticle(
+        p,
+        o.x + Math.cos(a) * ringR,
+        o.y + Math.sin(a) * ringR,
+        z,
+        "rainbow",
+        true,
+      );
+      const out = 24 + Math.random() * 22;
+      p.vx = Math.cos(a) * out;
+      p.vy = Math.sin(a) * out;
+      p.vz = (Math.random() - 0.5) * 18 - (this.frameSpeed || 0) * 0.25;
+      p.gravity = 10;
+      p.life = 1.1;
+    }
+    this.ringWave.position.set(o.x, o.y, z);
+    this.ringWave.rotation.set(0, 0, 0);
+    this.ringWaveTime = 0.5;
+  }
+
   burst(x, y, z, fuel, count = 24) {
     for (let i = 0; i < count; i++) {
       const p = this.particles.find((p) => p.life <= 0);
@@ -1436,6 +1483,11 @@ class FlightWorld {
     );
     const rollAngle =
       s.roll > 0 && !this.reducedMotion ? Math.PI * 2 * (1 - s.roll / 0.85) : 0;
+    // 穿环时来一个快速侧滚当庆祝动作
+    const ringSpin =
+      s.ringSpin > 0 && !this.reducedMotion
+        ? Math.PI * 2 * (1 - s.ringSpin / 0.6)
+        : 0;
     // 开局待机时面向镜头，点开始后丝滑转身背对镜头向前飞。
     // 转身过程中朝向系数 facing 从 1 渐变到 -1：俯仰、侧倾、滚转、转头
     // 都要乘上它，否则转过 180° 之后这些动作在世界坐标里会反掉。
@@ -1450,7 +1502,9 @@ class FlightWorld {
     this.hero.rotation.set(
       -s.vy * 0.002 * facing,
       yaw + steerYaw,
-      -bank + rollAngle * facing + (s.calibrating ? -s.steer * 0.25 : 0),
+      -bank +
+        (rollAngle + ringSpin) * facing +
+        (s.calibrating ? -s.steer * 0.25 : 0),
     );
     const pumping = s.calibrating || (s.thrust > 0 && !ready);
     this.leftArm.rotation.z = pumping
@@ -1662,12 +1716,32 @@ class FlightWorld {
     for (const o of objects) {
       if (o.mesh) {
         o.mesh.position.set(o.x, o.y, s.distance - o.d);
-        if (o.type === "ring") o.mesh.rotation.z = s.time * 0.13;
+        if (o.type === "ring") {
+          if (o.shatter > 0) {
+            // 碎裂：一边转一边放大一边淡出，转完就藏起来等回收
+            o.shatter = Math.max(0, o.shatter - visualDt);
+            const k = 1 - o.shatter / o.shatterTotal;
+            o.mesh.rotation.z = s.time * 0.13 + k * 2.6;
+            o.mesh.scale.setScalar(1 + k * 1.9);
+            for (const m of o.ownedMaterials || []) {
+              m.transparent = true;
+              m.opacity = 1 - k;
+            }
+            if (o.shatter <= 0) o.mesh.visible = false;
+          } else o.mesh.rotation.z = s.time * 0.13;
+        }
         else if(o.type === "bird") {
           o.wings.forEach((wing,i)=>wing.rotation.z=(i===0?-1:1)*Math.sin(s.time*9+o.d)*.5);
           o.mesh.rotation.z = Math.sin(s.time*3+o.d)*.05;
         } else o.mesh.rotation.z = Math.sin(s.time * 3 + o.d) * 0.06;
       }
+    }
+    this.ringWaveTime = Math.max(0, this.ringWaveTime - visualDt);
+    this.ringWave.visible = this.ringWaveTime > 0;
+    if (this.ringWave.visible) {
+      const k = 1 - this.ringWaveTime / 0.5;
+      this.ringWave.scale.setScalar(7.5 * (1 + k * 2.8));
+      this.ringWave.material.opacity = 0.75 * (1 - k) * (1 - k);
     }
     this.pulseTime = Math.max(0, this.pulseTime - visualDt);
     this.pulse.visible = this.pulseTime > 0;

@@ -37,8 +37,9 @@
     cooldown: [0, 0, 0],
     combo: 0,
     rings: 0,
+    ringSpin: 0,
     best: 0,
-    muted: true,
+    muted: false,
     pointer: false,
     gesture: false,
     flapUntil: 0,
@@ -119,6 +120,12 @@
       queue: world.weatherQueue.length,
       mode: s.mode,
       calibrating: Boolean(s.calibrating),
+      ringSpin: Number((s.ringSpin || 0).toFixed(2)),
+      // 诊断用：把最近的一个光环当成刚穿过，走的是和真实碰撞完全相同的路径
+      ring: () => {
+        const target = objects.find((o) => o.type === "ring" && !o.collected);
+        return target ? collectRing(target) : false;
+      },
     });
   } catch (error) {
     console.error("3D 初始化失败", error);
@@ -153,6 +160,116 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2700);
   }
+  // ---- 音效 ----------------------------------------------------------------
+  // 全部用振荡器 + 噪声实时合成，不引任何外部音频文件（保持零资源依赖）。
+  let noiseCache = null;
+  function noiseSource() {
+    if (!noiseCache) {
+      const len = Math.floor(audio.sampleRate * 1.5);
+      noiseCache = audio.createBuffer(1, len, audio.sampleRate);
+      const data = noiseCache.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    }
+    const src = audio.createBufferSource();
+    src.buffer = noiseCache;
+    src.loop = true;
+    return src;
+  }
+  function sfxContext() {
+    if (s.muted) return null;
+    try {
+      audio ??= new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === "suspended") audio.resume();
+      return audio;
+    } catch {
+      return null;
+    }
+  }
+  /** 单个音：频率从 from 滑到 to，带指数衰减包络。delay 用于排成琶音。 */
+  function tone(from, to, duration, type = "triangle", volume = 0.07, delay = 0) {
+    const ctx = sfxContext();
+    if (!ctx) return;
+    const t0 = ctx.currentTime + delay;
+    const o = ctx.createOscillator(),
+      g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(from, t0);
+    if (to !== from)
+      o.frequency.exponentialRampToValueAtTime(Math.max(1, to), t0 + duration);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(volume, t0 + Math.min(0.02, duration * 0.25));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start(t0);
+    o.stop(t0 + duration + 0.03);
+  }
+  /** 噪声：撞击、碎裂、破空靠它，通过带通滤波器扫频塑形。 */
+  function hiss(duration, volume, freq, sweepTo = freq, delay = 0) {
+    const ctx = sfxContext();
+    if (!ctx) return;
+    const t0 = ctx.currentTime + delay;
+    const src = noiseSource(),
+      f = ctx.createBiquadFilter(),
+      g = ctx.createGain();
+    f.type = "bandpass";
+    f.Q.value = 1.1;
+    f.frequency.setValueAtTime(freq, t0);
+    if (sweepTo !== freq)
+      f.frequency.exponentialRampToValueAtTime(Math.max(40, sweepTo), t0 + duration);
+    g.gain.setValueAtTime(volume, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    src.connect(f);
+    f.connect(g);
+    g.connect(ctx.destination);
+    src.start(t0);
+    src.stop(t0 + duration + 0.03);
+  }
+  const sfx = {
+    /** 穿环：上行三音，连穿时整体升高，连击越听越爽。 */
+    ring(combo = 1) {
+      const base = 660 * Math.pow(1.0595, Math.min(combo - 1, 7));
+      tone(base, base, 0.12, "triangle", 0.075);
+      tone(base * 1.26, base * 1.26, 0.12, "triangle", 0.055, 0.065);
+      tone(base * 1.5, base * 1.5, 0.24, "sine", 0.07, 0.13);
+    },
+    /** 光环碎裂：一层噪声扫频 + 一串玻璃碎片。 */
+    shatter() {
+      hiss(0.4, 0.15, 5200, 850);
+      for (let i = 0; i < 6; i++)
+        tone(
+          1500 + Math.random() * 2400,
+          900 + Math.random() * 1700,
+          0.09,
+          "triangle",
+          0.03,
+          0.03 + i * 0.042,
+        );
+    },
+    /** 撞鸟：短促下滑的"嘎"。 */
+    bird() {
+      tone(900, 230, 0.15, "sawtooth", 0.055);
+      hiss(0.15, 0.09, 1900, 420);
+    },
+    /** 触地：低频闷响 + 扬尘。 */
+    thud() {
+      tone(155, 40, 0.4, "sine", 0.15);
+      hiss(0.28, 0.12, 430, 90);
+    },
+    /** 交警上路：两音一组来回的警笛，urgency 越高越急促。 */
+    siren(urgency = 0) {
+      const gap = 0.44 - Math.min(0.22, urgency * 0.16);
+      for (let i = 0; i < 3; i++) {
+        tone(680, 1010, gap * 0.5, "square", 0.04, i * gap);
+        tone(1010, 680, gap * 0.5, "square", 0.04, i * gap + gap * 0.5);
+      }
+    },
+    /** 加分小提示。 */
+    coin() {
+      tone(1180, 1180, 0.06, "triangle", 0.045);
+      tone(1560, 1560, 0.15, "triangle", 0.045, 0.055);
+    },
+  };
   function radio(text) {
     $("radioText").textContent = text;
     $("radio").hidden = false;
@@ -353,6 +470,7 @@
       calibrating: false,
       menuPreview: false,
       rings: 0,
+    ringSpin: 0,
       peak: 18,
       x: 0,
       altitude: 18,
@@ -383,6 +501,7 @@
     nextRadio = 7;
     radioTime = 0;
     radioIndex = 0;
+    poseStatsReset();
     world.reset();
     // 每一局都从晴空开始，之后按 晴 → 雷雨 → 彩虹 → 落日 → 星夜 → 飘雪 推进
     world.startWeatherRun();
@@ -585,6 +704,31 @@
     $("overlayDescription").textContent = win ? "这回，天空记住你了。" : "人被抓了，纪录留下了。";
     $("resultStats").innerHTML = `<div><strong>${s.score}</strong><span>本局得分</span></div><div><strong>${Math.floor(s.peak)}<small>m</small></strong><span>最高飞行</span></div><div><strong>${s.rings}</strong><span>穿过光环</span></div>`;
     $("resultStats").hidden = false;
+    // 体感模式的运动报告：只有真的用摄像头玩了一会儿才显示
+    const poseUsed = Boolean(s.camera) && poseStats.seconds > 5;
+    $("resultFitness").hidden = !poseUsed;
+    if (poseUsed) {
+      const kcal = poseCalories(poseStats.seconds);
+      const mins = poseStats.seconds / 60;
+      const mm = Math.floor(poseStats.seconds / 60);
+      const ss = String(Math.floor(poseStats.seconds % 60)).padStart(2, "0");
+      $("fitnessGrid").innerHTML =
+        `<div><strong>${mm}:${ss}</strong><span>有效运动</span></div>` +
+        `<div><strong>${poseStats.flaps}</strong><span>扇翅次数</span></div>` +
+        `<div><strong>${mins > 0.05 ? Math.round(poseStats.flaps / mins) : 0}</strong><span>次 / 分钟</span></div>` +
+        `<div><strong>${kcal.toFixed(1)}<small>kcal</small></strong><span>消耗</span></div>`;
+      const compare =
+        kcal >= 90
+          ? "≈ 一根香蕉还多"
+          : kcal >= 45
+            ? "≈ 半根香蕉"
+            : kcal >= 18
+              ? "≈ 一小口香蕉"
+              : "刚热身";
+      $("fitnessNote").textContent =
+        `估算依据：体重 ${POSE_WEIGHT} kg、MET ${POSE_MET}（上肢中等强度）。${compare}。` +
+        (poseStats.flaps >= 60 ? "扇了这么多下，翅膀辛苦了。" : "");
+    }
     $("changeModeBtn").hidden = false;
     $("resultGoal").hidden = false;
     $("resultGoal").textContent = s.rings >= 3
@@ -623,6 +767,20 @@
     return true;
   }
   // 交警在场时全场红灯。只在状态真正变化时碰 DOM，避免每帧写 classList。
+  // ---- 体感运动数据 --------------------------------------------------------
+  // 只在体感模式下累计，结算时给一份"运动报告"。
+  const POSE_WEIGHT = 60; // 没有体重输入，按 60kg 假设（报告里会写明）
+  const POSE_MET = 4.5;   // 上肢持续发力属中等强度
+  const poseStats = { seconds: 0, flaps: 0 };
+  function poseStatsReset() {
+    poseStats.seconds = 0;
+    poseStats.flaps = 0;
+  }
+  /** 通用运动生理学估算：kcal = 分钟 × MET × 3.5 × 体重 / 200 */
+  function poseCalories(seconds) {
+    return ((seconds / 60) * POSE_MET * 3.5 * POSE_WEIGHT) / 200;
+  }
+  let wasOnGround = false;
   let chaseFlashOn = false;
   function setChaseFlash(on) {
     if (on === chaseFlashOn) return;
@@ -644,7 +802,7 @@
     s.groundTime = 0;
     $("groundWarning").hidden = true;
     $("chase").hidden = false;
-    beep(180);
+    sfx.siren(0);
     toast(
       reason === "building"
         ? "🚨 撞上楼体！交警正在靠近，准备接受检查。"
@@ -833,6 +991,28 @@
       );
     nextGate = s.distance + 230;
   }
+  /** 穿环：加分、音效、奶龙侧滚、光环碎裂。碰撞和调试钩子都走这里。 */
+  function collectRing(o) {
+    if (!o || o.collected) return false;
+    o.collected = true;
+    s.combo++;
+    s.rings++;
+    s.celebration = 0.7;
+    s.score += 100 + Math.min(s.combo - 1, 6) * 20;
+    if (s.rings === 3) s.score += 300;
+    sfx.ring(s.combo);
+    sfx.shatter();
+    s.ringSpin = 0.6;
+    world.breakRing(o, s.distance);
+    toast(
+      s.rings === 3
+        ? "三环达成！额外 +300 分，奶龙申请加餐！"
+        : s.combo > 1
+          ? `光环连穿 ×${s.combo}！+${100 + Math.min(s.combo - 1, 6) * 20} 分！`
+          : "穿过光环 +100！奶龙：这圈怎么不能吃？",
+    );
+    return true;
+  }
   function update(dt) {
     if (s.mode === "ready" || s.menuPreview) {
       s.time += dt;
@@ -920,6 +1100,8 @@
       );
     }
     s.cooldown = s.cooldown.map((v) => Math.max(0, v - dt));
+    s.ringSpin = Math.max(0, (s.ringSpin || 0) - dt);
+    if (s.camera) poseStats.seconds += dt;
     if (s.distance >= nextGate) spawnTargets();
     for (const o of objects) {
       const crossing = previous < o.d && s.distance >= o.d;
@@ -930,19 +1112,7 @@
       const crossY = before.y + (s.altitude - before.y) * fraction;
       if (o.type === "ring" && crossing) {
         if (Math.hypot(crossX - o.x, crossY - o.y) < (tutorialStep >= 0 ? 14.4 : 7.2)) {
-          s.combo++;
-          s.rings++;
-          s.celebration = 0.7;
-          s.score += 100 + Math.min(s.combo - 1, 6) * 20;
-          if (s.rings === 3) s.score += 300;
-          world.burst(o.x, o.y, 0, "rainbow", 30);
-          toast(
-            s.rings === 3 ? "三环达成！额外 +300 分，奶龙申请加餐！" : s.combo > 1
-              ? `光环连穿 ×${s.combo}！+${100 + Math.min(s.combo-1,6)*20} 分！`
-              : "穿过光环 +100！奶龙：这圈怎么不能吃？",
-          );
-          beep(650);
-          o.collected = true;
+          collectRing(o);
         } else s.combo = 0;
       }
       if (o.type === "bird" && !o.collected &&
@@ -954,7 +1124,7 @@
           s.score -= 50;
           s.combo = 0;
           toast("撞到飞鸟 -50！鸟：你考过飞行驾照吗？！");
-          beep(120);
+          sfx.bird();
           world.burst(o.x,o.y,s.distance-o.d,"rainbow",10);
         }
       }
@@ -967,6 +1137,7 @@
           s.celebration = 0.6;
           world.burst(o.x, o.y, s.distance - o.d, "rainbow", 12);
           toast("翻滚闪避 +80！追兵：这肚子怎么还能漂移？！");
+          sfx.coin();
         } else if (s.dash > 0 || s.shield > 0) {
           s.score += 30;
           world.burst(o.x, o.y, s.distance - o.d, s.fuel, 14);
@@ -982,11 +1153,13 @@
         s.score += 35;
         s.celebration = 0.45;
         toast("擦边飞过 +35！差点就要写情况说明了。");
-        beep(520);
+        sfx.coin();
       }
     }
     objects = objects.filter((o) => {
-      if (o.collected || o.d < s.distance - 45) {
+      // 已经吃到但还在播碎裂动画的光环先留着，演完再回收
+      const settled = o.collected && !(o.shatter > 0);
+      if (settled || o.d < s.distance - 45) {
         world.remove(o);
         return false;
       }
@@ -1005,6 +1178,10 @@
       recordTime = 0;
     }
     // Loitering on the deck is just as illegal as crashing into it.
+    // 触地那一下给个闷响（只在刚接触的瞬间响，不是持续的摩擦声）
+    const onGround = !protectedFrame && !s.chase && s.altitude <= 4.5;
+    if (onGround && !wasOnGround) sfx.thud();
+    wasOnGround = onGround;
     if (!protectedFrame && !s.chase && s.altitude <= 4.5) {
       s.groundTime += dt;
       if (s.groundTime >= 3) startChase("ground");
@@ -1280,11 +1457,15 @@
   $("gotItBtn").addEventListener("click", () => $("helpDialog").close());
   $("soundBtn").addEventListener("click", () => {
     s.muted = !s.muted;
+    syncSoundButton();
+    if (!s.muted) beep();
+  });
+  function syncSoundButton() {
     $("soundBtn").setAttribute("aria-pressed", String(!s.muted));
     $("soundBtn").setAttribute("aria-label", s.muted ? "开启声音" : "关闭声音");
     $("soundBtn").innerHTML = `♪<span>声音${s.muted ? "关" : "开"}</span>`;
-    beep();
-  });
+  }
+  syncSoundButton();
   async function fullscreen() {
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
@@ -1498,6 +1679,7 @@
       if (s.mode === "running") {
         s.flapUntil = now + 250;
         s.gesture = true;
+        poseStats.flaps += 1;
         fired = true;
       }
       if (overlayStep === "calibration" && calibration.step === 0) calibration.flaps += 1;

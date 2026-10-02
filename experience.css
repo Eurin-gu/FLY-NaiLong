@@ -339,6 +339,16 @@ body[data-screen="result"] .overlay h2 { font-size: clamp(36px, 5vw, 58px); }
 .result-stats strong { display: block; font-size: 27px; color: #304738; }
 .result-stats strong small { font-size: 11px; }
 .result-stats span { display: block; margin-top: 6px; font-size: 11px; color: #87907b; }
+/* 体感模式的运动报告：和得分板同一套排版，用绿色区分"这是身体数据" */
+.result-fitness { margin-top: 18px; padding: 13px 14px 14px; border-radius: 14px; background: linear-gradient(#eef7e6, #e6f2dd); border: 1px solid #d3e4c4; }
+.result-fitness[hidden] { display: none; }
+.fitness-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 11px; }
+.fitness-head b { font-size: 13px; color: #33582f; letter-spacing: .02em; }
+.fitness-head span { font-size: 10px; color: #6f8a63; line-height: 1.5; }
+.fitness-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+.fitness-grid strong { display: block; font-size: 19px; color: #2f5230; font-variant-numeric: tabular-nums; }
+.fitness-grid strong small { font-size: 10px; margin-left: 1px; }
+.fitness-grid span { display: block; margin-top: 4px; font-size: 10px; color: #7c9370; }
 .flight-mission { position: absolute; z-index: 3; top: 82px; left: 22px; background: #fff8dce8; border-left: 3px solid #ed9761; border-radius: 0 10px 10px 0; padding: 8px 12px; pointer-events: none; }
 .flight-mission span { display: block; font-size: 9px; color: #917b58; }
 .flight-mission strong { display: block; font-size: 12px; margin-top: 3px; color: #344d3d; }
@@ -360,6 +370,9 @@ body[data-screen="result"] .overlay h2 { font-size: clamp(36px, 5vw, 58px); }
   body[data-screen="setup"] .overlay-content { padding: 18px; }
   body[data-screen="result"] .overlay, body[data-screen="paused"] .overlay { align-items: center; }
   body[data-screen="result"] .overlay-content, body[data-screen="paused"] .overlay-content { width: 100%; padding: 27px 20px; }
+  .fitness-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .fitness-grid strong { font-size: 17px; }
+  .result-fitness { margin-top: 14px; padding: 11px 12px 12px; }
   .flight-mission { top: auto; bottom: 91px; left: 12px; padding: 6px 9px; }
   .flight-mission strong { font-size: 10px; }
 }
