@@ -121,6 +121,15 @@
       mode: s.mode,
       calibrating: Boolean(s.calibrating),
       ringSpin: Number((s.ringSpin || 0).toFixed(2)),
+      music: bgm
+        ? {
+            src: String(bgm.src).split("/").pop(),
+            paused: bgm.paused,
+            time: Number(bgm.currentTime.toFixed(1)),
+            volume: bgm.volume,
+            loop: bgm.loop,
+          }
+        : null,
       // 诊断用：把最近的一个光环当成刚穿过，走的是和真实碰撞完全相同的路径
       ring: () => {
         const target = objects.find((o) => o.type === "ring" && !o.collected);
@@ -228,6 +237,40 @@
   // ---- 采样音效（Kenney / OpenGameArt，全部 CC0 公共领域）------------------
   // 优先播采样；没加载好或播放失败时自动退回上面那套合成音，保证任何情况下都有声。
   // 全部经 loudnorm 统一到 -18 LUFS，单声道 ogg，六个加起来约 69KB。
+  // ---- 背景音乐 --------------------------------------------------------------
+  // 用 <audio loop> 而不是 WebAudio 解码：一首两分钟的歌解码成 AudioBuffer 要
+  // 40MB 左右内存，手机上太重；<audio> 是流式的，几乎不占内存。
+  // ogg 优先：<audio loop> 在 ogg 下接缝无缝，mp3 会带上编码器补帧的空隙。
+  const MUSIC_VOLUME = 0.32;
+  let bgm = null;
+  let bgmWanted = false;
+  function musicElement() {
+    if (bgm) return bgm;
+    bgm = new Audio();
+    bgm.loop = true;
+    bgm.preload = "auto";
+    bgm.volume = MUSIC_VOLUME;
+    const probe = document.createElement("audio");
+    bgm.src = probe.canPlayType('audio/ogg; codecs="vorbis"') ? "music/bgm.ogg" : "music/bgm.mp3";
+    return bgm;
+  }
+  function startMusic() {
+    bgmWanted = true;
+    const el = musicElement();
+    el.volume = s.muted ? 0 : MUSIC_VOLUME;
+    el.play().catch(() => {
+      /* start() 是点击触发的，正常不会走到这里 */
+    });
+  }
+  function pauseMusic() {
+    if (bgm && !bgm.paused) bgm.pause();
+  }
+  function resumeMusic() {
+    if (bgmWanted && bgm) bgm.play().catch(() => {});
+  }
+  function syncMusicVolume() {
+    if (bgm) bgm.volume = s.muted ? 0 : MUSIC_VOLUME;
+  }
   const SFX_SOURCES = {
     ring: "sfx/ring.ogg",
     shatter: "sfx/shatter.ogg",
@@ -558,6 +601,7 @@
     radioTime = 0;
     radioIndex = 0;
     poseStatsReset();
+    startMusic();
     world.reset();
     // 每一局都从晴空开始，之后按 晴 → 雷雨 → 彩虹 → 落日 → 星夜 → 飘雪 推进
     world.startWeatherRun();
@@ -721,6 +765,7 @@
   function pause() {
     if (s.mode === "running") {
       s.mode = "paused";
+      pauseMusic();
       setChaseFlash(false);
       clearInput();
       saveRecord();
@@ -735,6 +780,7 @@
     } else if (s.mode === "paused") {
       document.body.dataset.screen = "playing";
       $("flightMission").hidden = false;
+      resumeMusic();
       s.mode = "running";
       $("gameOverlay").hidden = true;
       $("pauseBtn").textContent = "Ⅱ";
@@ -1520,6 +1566,8 @@
   $("soundBtn").addEventListener("click", () => {
     s.muted = !s.muted;
     syncSoundButton();
+    syncMusicVolume();
+    if (!s.muted && bgmWanted) resumeMusic();
     if (!s.muted) beep();
   });
   function syncSoundButton() {
@@ -2203,6 +2251,11 @@
   $("cameraBtn").addEventListener("click", enableCamera);
   $("keyboardBtn").addEventListener("click", stopCamera);
   window.addEventListener("pagehide", stopCamera);
+  // 切到后台时音乐也跟着停，别在后台一直响
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) pauseMusic();
+    else if (s.mode !== "paused") resumeMusic();
+  });
   // 首屏渲染完、浏览器空闲了再开始预热，不跟首屏抢带宽
   if ("requestIdleCallback" in window)
     requestIdleCallback(() => warmUpPose(), { timeout: 8000 });
