@@ -225,16 +225,65 @@
     src.start(t0);
     src.stop(t0 + duration + 0.03);
   }
+  // ---- 采样音效（Kenney / OpenGameArt，全部 CC0 公共领域）------------------
+  // 优先播采样；没加载好或播放失败时自动退回上面那套合成音，保证任何情况下都有声。
+  // 全部经 loudnorm 统一到 -18 LUFS，单声道 ogg，六个加起来约 69KB。
+  const SFX_SOURCES = {
+    ring: "sfx/ring.ogg",
+    shatter: "sfx/shatter.ogg",
+    bird: "sfx/bird.ogg",
+    ground: "sfx/ground.ogg",
+    siren: "sfx/siren.ogg",
+    flap: "sfx/flap.ogg",
+  };
+  // 各音效的相对音量（按测出来的响度和峰值配的，避免爆音）
+  const SFX_GAIN = { ring: 1, shatter: 0.9, bird: 1, ground: 0.9, siren: 1.4, flap: 0.8 };
+  const sfxBuffers = {};
+  let sfxLoadPromise = null;
+  function loadSfxBuffers() {
+    if (sfxLoadPromise) return sfxLoadPromise;
+    const ctx = sfxContext();
+    if (!ctx) return Promise.resolve();
+    sfxLoadPromise = Promise.all(
+      Object.entries(SFX_SOURCES).map(async ([key, url]) => {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) return;
+          sfxBuffers[key] = await ctx.decodeAudioData(await res.arrayBuffer());
+        } catch {
+          /* 保持缺失，播放时退回合成音 */
+        }
+      }),
+    );
+    return sfxLoadPromise;
+  }
+  /** 播采样。rate 用来变速（穿环连击时音调逐级升高）。返回 false 表示没得播。 */
+  function playSfx(key, rate = 1, delay = 0) {
+    const ctx = sfxContext();
+    const buffer = sfxBuffers[key];
+    if (!ctx || !buffer) return false;
+    const src = ctx.createBufferSource(),
+      gain = ctx.createGain();
+    src.buffer = buffer;
+    src.playbackRate.value = rate;
+    gain.gain.value = SFX_GAIN[key] ?? 1;
+    src.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(ctx.currentTime + delay);
+    return true;
+  }
   const sfx = {
-    /** 穿环：上行三音，连穿时整体升高，连击越听越爽。 */
+    /** 穿环：连穿时把采样变速升高，最多提 7 个半音。 */
     ring(combo = 1) {
+      if (playSfx("ring", Math.pow(1.0595, Math.min(combo - 1, 7)))) return;
       const base = 660 * Math.pow(1.0595, Math.min(combo - 1, 7));
       tone(base, base, 0.12, "triangle", 0.075);
       tone(base * 1.26, base * 1.26, 0.12, "triangle", 0.055, 0.065);
       tone(base * 1.5, base * 1.5, 0.24, "sine", 0.07, 0.13);
     },
-    /** 光环碎裂：一层噪声扫频 + 一串玻璃碎片。 */
+    /** 光环碎裂。 */
     shatter() {
+      if (playSfx("shatter")) return;
       hiss(0.4, 0.15, 5200, 850);
       for (let i = 0; i < 6; i++)
         tone(
@@ -246,23 +295,30 @@
           0.03 + i * 0.042,
         );
     },
-    /** 撞鸟：短促下滑的"嘎"。 */
+    /** 撞鸟。 */
     bird() {
+      if (playSfx("bird")) return;
       tone(900, 230, 0.15, "sawtooth", 0.055);
       hiss(0.15, 0.09, 1900, 420);
     },
-    /** 触地：低频闷响 + 扬尘。 */
+    /** 触地。 */
     thud() {
+      if (playSfx("ground")) return;
       tone(155, 40, 0.4, "sine", 0.15);
       hiss(0.28, 0.12, 430, 90);
     },
-    /** 交警上路：两音一组来回的警笛，urgency 越高越急促。 */
+    /** 交警上路。采样就 1.6 秒，重复两次差不多是追捕的时长。 */
     siren(urgency = 0) {
+      if (playSfx("siren") && playSfx("siren", 1.04, 1.05)) return;
       const gap = 0.44 - Math.min(0.22, urgency * 0.16);
       for (let i = 0; i < 3; i++) {
         tone(680, 1010, gap * 0.5, "square", 0.04, i * gap);
         tone(1010, 680, gap * 0.5, "square", 0.04, i * gap + gap * 0.5);
       }
+    },
+    /** 扇翅破风：每次扇动来一下，音调略随机免得太机械。 */
+    flap() {
+      if (playSfx("flap", 0.94 + Math.random() * 0.14)) return;
     },
     /** 加分小提示。 */
     coin() {
@@ -781,6 +837,7 @@
     return ((seconds / 60) * POSE_MET * 3.5 * POSE_WEIGHT) / 200;
   }
   let wasOnGround = false;
+  let lastFlapSound = -1;
   let chaseFlashOn = false;
   function setChaseFlash(on) {
     if (on === chaseFlashOn) return;
@@ -1102,6 +1159,11 @@
     s.cooldown = s.cooldown.map((v) => Math.max(0, v - dt));
     s.ringSpin = Math.max(0, (s.ringSpin || 0) - dt);
     if (s.camera) poseStats.seconds += dt;
+    // 破风声：体感是每次扇翅一下，键盘是持续推力按 0.42 秒的节奏响
+    if (s.thrust > 0 && s.mode === "running" && s.time - lastFlapSound > 0.42) {
+      lastFlapSound = s.time;
+      sfx.flap();
+    }
     if (s.distance >= nextGate) spawnTargets();
     for (const o of objects) {
       const crossing = previous < o.d && s.distance >= o.d;
@@ -2130,6 +2192,14 @@
     }),
   );
   syncSceneButtons();
+  // 首次交互后再加载采样音效（此时 AudioContext 已解锁）
+  const kickSfxLoad = () => {
+    loadSfxBuffers();
+    window.removeEventListener("pointerdown", kickSfxLoad);
+    window.removeEventListener("keydown", kickSfxLoad);
+  };
+  window.addEventListener("pointerdown", kickSfxLoad);
+  window.addEventListener("keydown", kickSfxLoad);
   $("cameraBtn").addEventListener("click", enableCamera);
   $("keyboardBtn").addEventListener("click", stopCamera);
   window.addEventListener("pagehide", stopCamera);

@@ -1,0 +1,15 @@
+本目录下的音效全部为 CC0（公共领域）授权：可商用、可修改、无需署名。
+以下致谢出于自愿。
+
+ring.ogg     < Interface Sounds      · Kenney (kenney.nl) · CC0
+shatter.ogg  < Interface Sounds      · Kenney (kenney.nl) · CC0
+bird.ogg     < RPG Audio             · Kenney (kenney.nl) · CC0
+ground.ogg   < Sci-Fi Sounds         · Kenney (kenney.nl) · CC0
+flap.ogg     < Sci-Fi Sounds         · Kenney (kenney.nl) · CC0
+siren.ogg    < Sirens and Alarm Noise · aquinn · OpenGameArt · CC0
+
+License: Creative Commons Zero (CC0) 1.0
+https://creativecommons.org/publicdomain/zero/1.0/
+
+处理：全部转单声道 ogg，经 loudnorm 统一到 -18 LUFS（峰值上限 -2 dBTP）。
+siren 从原 41.33s 截取 1.0~2.6s，flap 从原 5.0s 截取开头 0.35s。六个合计约 69KB。
