@@ -1935,36 +1935,44 @@
     });
     return poseAssetsPromise;
   }
-  // 后台预热：页面空闲时先把 wasm / 模型拉下来并跑一帧。
-  // 这样点「开启摄像头」时基本是秒开，而不是当场下 11.6MB。
-  // 走流量的用户（saveData / 2G）直接跳过，不替他们做决定。
-  let warmPose = null;
-  async function warmUpPose() {
-    if (pose || warmPose || !navigator.onLine) return;
-    const conn = navigator.connection;
-    if (conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || "")))
-      return;
-    try {
-      await loadPose();
-      if (pose || warmPose) return;
-      await preloadPoseAssets();
-      if (pose || warmPose) return;
-      const warm = new window.Pose({ locateFile: (f) => poseBase + f });
-      warm.setOptions({
+  /**
+   * 全局唯一的 Pose 实例。
+   *
+   * MediaPipe 有个坑：**同时创建/加载两个 solution** 会把 Emscripten 的 Module
+   * 全局搞坏，抛
+   *   Aborted(Module.arguments has been replaced with plain arguments_ ...)
+   * （见 ml5js#69、mediapipe#2823）。原来后台预热会 new 一个并 send 一帧，用户
+   * 这时点开摄像头又会 new 一个 —— 两个实例并存，于是
+   * **"第一次开摄像头必然失败，第二次就好了"**（第二次预热早已完成）。
+   * 现在实例只在这里创建一次，反复开关摄像头都复用它。
+   */
+  let poseInstance = null;
+  function acquirePose() {
+    if (!poseInstance) {
+      poseInstance = new window.Pose({ locateFile: (f) => poseBase + f });
+      poseInstance.setOptions({
         modelComplexity: 0,
         smoothLandmarks: true,
         minDetectionConfidence: 0.6,
         minTrackingConfidence: 0.6,
       });
-      warm.onResults(() => {});
-      // 真正触发 wasm / 模型下载的是 send()，所以喂一帧空白图
-      const blank = document.createElement("canvas");
-      blank.width = 64;
-      blank.height = 64;
-      await warm.send({ image: blank });
-      warmPose = warm;
+    }
+    return poseInstance;
+  }
+  // 后台预热：页面空闲时先把脚本和素材字节拉下来，点「开启摄像头」时就不用当场下 11.6MB。
+  // 注意这里故意【不】创建 Pose 实例、也不 send —— 实例只由 acquirePose() 创建一次。
+  // 走流量的用户（saveData / 2G）直接跳过，不替他们做决定。
+  async function warmUpPose() {
+    if (pose || !navigator.onLine) return;
+    const conn = navigator.connection;
+    if (conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || "")))
+      return;
+    try {
+      await loadPose();
+      if (pose) return;
+      await preloadPoseAssets();
     } catch {
-      warmPose = null;
+      /* 预热失败无所谓，开摄像头时会重走一遍 */
     }
   }
   // ---- 体感引擎加载条 ----------------------------------------------------
@@ -2101,9 +2109,8 @@
       });
       if (generation !== cameraGeneration) return false;
       // 后台已经预热过就直接复用，省掉重复下载和 wasm 编译
-      const currentPose =
-        warmPose || new window.Pose({ locateFile: (f) => poseBase + f });
-      warmPose = null;
+      // 唯一实例：反复开关摄像头也复用同一个，绝不再创建第二个
+      const currentPose = acquirePose();
       pose = currentPose;
       currentPose.setOptions({
         modelComplexity: 0,
