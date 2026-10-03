@@ -130,6 +130,20 @@
             loop: bgm.loop,
           }
         : null,
+      // 诊断用：直接走一遍"被抓住"的结算流程
+      lose: () => {
+        if (!s.chase) {
+          s.chase = {
+            d: s.distance - 14,
+            x: s.x,
+            y: s.altitude,
+            t: 0,
+            reason: "health",
+          };
+        }
+        endChase(true);
+        return s.mode;
+      },
       // 诊断用：把最近的一个光环当成刚穿过，走的是和真实碰撞完全相同的路径
       ring: () => {
         const target = objects.find((o) => o.type === "ring" && !o.collected);
@@ -254,19 +268,49 @@
     bgm.src = probe.canPlayType('audio/ogg; codecs="vorbis"') ? "music/bgm.ogg" : "music/bgm.mp3";
     return bgm;
   }
+  // 手机浏览器（iOS 尤其）要求 play() 与用户手势在同一个任务里。startMusic() 是从
+  // start() 里调的，而 start() 之前可能已经 await 过摄像头/素材，手势被消耗掉了 ——
+  // play() 会被拒，之前这里 .catch 静默吞掉，表现就是"第一次玩手机上没音乐"。
+  // 现在失败就挂起标记，等下一次任何交互再补一次。
+  let musicNeedsGesture = false;
+  const MUSIC_UNLOCK_EVENTS = ["pointerdown", "touchstart", "keydown"];
+  function unlockMusic() {
+    if (!bgmWanted || !musicNeedsGesture) return;
+    musicElement()
+      .play()
+      .then(() => {
+        musicNeedsGesture = false;
+        MUSIC_UNLOCK_EVENTS.forEach((e) => window.removeEventListener(e, unlockMusic));
+      })
+      .catch(() => {});
+  }
+  MUSIC_UNLOCK_EVENTS.forEach((e) =>
+    window.addEventListener(e, unlockMusic, { passive: true }),
+  );
   function startMusic() {
     bgmWanted = true;
     const el = musicElement();
     el.volume = s.muted ? 0 : MUSIC_VOLUME;
-    el.play().catch(() => {
-      /* start() 是点击触发的，正常不会走到这里 */
-    });
+    el.play()
+      .then(() => {
+        musicNeedsGesture = false;
+      })
+      .catch(() => {
+        musicNeedsGesture = true;
+      });
   }
   function pauseMusic() {
     if (bgm && !bgm.paused) bgm.pause();
   }
   function resumeMusic() {
-    if (bgmWanted && bgm) bgm.play().catch(() => {});
+    if (!bgmWanted || !bgm) return;
+    bgm.play()
+      .then(() => {
+        musicNeedsGesture = false;
+      })
+      .catch(() => {
+        musicNeedsGesture = true;
+      });
   }
   function syncMusicVolume() {
     if (bgm) bgm.volume = s.muted ? 0 : MUSIC_VOLUME;
@@ -806,6 +850,11 @@
     $("overlayDescription").textContent = win ? "这回，天空记住你了。" : "人被抓了，纪录留下了。";
     $("resultStats").innerHTML = `<div><strong>${s.score}</strong><span>本局得分</span></div><div><strong>${Math.floor(s.peak)}<small>m</small></strong><span>最高飞行</span></div><div><strong>${s.rings}</strong><span>穿过光环</span></div>`;
     $("resultStats").hidden = false;
+    // 防御：结算界面的两个按钮必须可点。任何路径把它俩 disable 了都在这里复位，
+    // 否则玩家会卡在"点不了再喷一趟"。
+    launching = false;
+    $("startBtn").disabled = false;
+    $("changeModeBtn").disabled = false;
     // 体感模式的运动报告：只有真的用摄像头玩了一会儿才显示
     const poseUsed = Boolean(s.camera) && poseStats.seconds > 5;
     $("resultFitness").hidden = !poseUsed;
@@ -1399,25 +1448,32 @@
     // separate action on the result card.
     if (!s.flight || launching) return;
     launching = true;
+    // 「换个玩法」永远不禁用：它不该被开局流程牵连。
+    // 之前这里把两个按钮一起禁用，然后 await enableCamera()（最长 75 秒），
+    // 摄像头不开就两个按钮全灰 —— 手机上切换应用会触发 pagehide → stopCamera()，
+    // s.camera 变回 false，于是"被抓住之后再喷一趟点不了、换个玩法也点不了"。
     $("startBtn").disabled = true;
-    $("changeModeBtn").disabled = true;
-    if (setupControl === "camera" && !s.camera) {
-      const ready = await enableCamera();
-      if (!ready) {
-        setupControl = "manual";
-        if (overlayStep === "done") showModeStep();
-        syncSetupControl();
-        $("setupControlHint").textContent = "摄像头未就绪。已切到键盘 / 触屏，确认后再开始飞行。";
-        launching = false;
-        $("changeModeBtn").disabled = false;
-        $("startBtn").disabled = !s.flight;
-        return;
-      }
-    }
-    launching = false;
     $("changeModeBtn").disabled = false;
-    $("startBtn").disabled = false;
-    start();
+    try {
+      if (setupControl === "camera" && !s.camera) {
+        $("startBtn").textContent = "正在开启摄像头…";
+        const ready = await enableCamera();
+        if (!ready) {
+          setupControl = "manual";
+          if (overlayStep === "done") showModeStep();
+          syncSetupControl();
+          $("setupControlHint").textContent =
+            "摄像头未就绪。已切到键盘 / 触屏，确认后再开始飞行。";
+          return;
+        }
+      }
+      start();
+    } finally {
+      // 不管走哪条分支（成功、失败、提前 return、抛异常）按钮一定恢复可点
+      launching = false;
+      $("changeModeBtn").disabled = false;
+      $("startBtn").disabled = false;
+    }
   });
   $("rollBtn").addEventListener("click", barrelRoll);
   $("tutorialSkip").addEventListener("click", endTutorial);
