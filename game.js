@@ -700,7 +700,11 @@
     $("startBtn").textContent = "等待你的动作…";
     $("setupCameraView").hidden = false;
     Object.assign(calibration, { step: 0, flaps: 0, since: 0, hold: 0, last: 0 });
-    const ready = await enableCamera();
+    // 超时兜底：摄像头流程里有素材下载，挂死了 launching 就永远卡住，
+    // 两个按钮（再喷一趟 / 换个玩法）会一起失效。
+    const ready = await withTimeout(enableCamera(), 120000, "开启摄像头").catch(
+      () => false,
+    );
     launching = false;
     if (overlayStep !== "calibration") return;
     if (!ready) {
@@ -1404,8 +1408,13 @@
   requestAnimationFrame(loop);
   hud();
   let launching = false;
+  // 「换个玩法」是"退出当前流程"，任何时候都必须能用。
+  // 之前它被 if (!launching) 挡着，而 launching 有可能永久卡在 true
+  // （摄像头流程挂起、await 永不返回），结果这个按钮彻底失效。
+  // 现在它总是生效，并且顺手把卡住的 launching 解开，让「再喷一趟」也能恢复。
   $("changeModeBtn").addEventListener("click", () => {
-    if (!launching) showModeStep();
+    launching = false;
+    showModeStep();
   });
   let greetingIndex = 0;
   $("dragonHello").addEventListener("click", () => {
@@ -1457,7 +1466,10 @@
     try {
       if (setupControl === "camera" && !s.camera) {
         $("startBtn").textContent = "正在开启摄像头…";
-        const ready = await enableCamera();
+        // 再兜一层上限，保证 finally 一定执行、按钮一定恢复
+        const ready = await withTimeout(enableCamera(), 120000, "开启摄像头").catch(
+          () => false,
+        );
         if (!ready) {
           setupControl = "manual";
           if (overlayStep === "done") showModeStep();
@@ -1512,7 +1524,10 @@
     setupControl = "camera";
     syncSetupControl();
     $("setupCamera").disabled = true;
-    const ready = await enableCamera();
+    // 同上：素材下载可能挂死，这里必须有上限，否则这个开关也永远转回不来
+    const ready = await withTimeout(enableCamera(), 120000, "开启摄像头").catch(
+      () => false,
+    );
     $("setupCamera").disabled = false;
     if (!ready) setupControl = "manual";
     syncSetupControl();
@@ -1933,8 +1948,18 @@
     "pose_landmark_lite.tflite",
     "pose_web.binarypb",
   ];
+  /** 给任何 promise 加一个上限：手机网络下请求会挂死，不能无限等。 */
+  function withTimeout(promise, ms, label) {
+    let timer = 0;
+    return Promise.race([
+      promise.finally(() => clearTimeout(timer)),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(Error(label + " 超时")), ms);
+      }),
+    ]);
+  }
   async function fetchWithProgress(url, onChunk) {
-    const res = await fetch(url);
+    const res = await withTimeout(fetch(url), 45000, url.split("/").pop());
     if (!res.ok) throw Error("HTTP " + res.status);
     if (!res.body || !res.body.getReader) {
       await res.arrayBuffer();
@@ -1977,7 +2002,9 @@
       let lastError = null;
       for (const base of order) {
         try {
-          await preloadFromSource(base, onProgress);
+          // 90 秒约等于 1 Mbps 下完 11.6MB；低于这个速度就干脆失败，
+          // 别让"启动中"无限期挂着（那会让开始按钮一直不可用）。
+          await withTimeout(preloadFromSource(base, onProgress), 90000, "模型素材下载");
           poseBase = base; // 哪个源成功，就让 MediaPipe 去哪个源取
           return base;
         } catch (error) {
