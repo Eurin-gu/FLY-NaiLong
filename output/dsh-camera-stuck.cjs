@@ -56,7 +56,24 @@ const PROBE = `(() => {
     p.on("console", (m) => { if (m.type() === "error") errors.push(tag + " console: " + m.text().slice(0, 140)); });
     await p.setViewportSize({ width: 1440, height: 1000 });
     await p.goto(BASE + "/", { waitUntil: "load" });
+    if (process.env.FRESH) {
+      // 线上有 Service Worker：先注销 + 清缓存再重载，保证测的是刚发布的包
+      await p.evaluate(async () => {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+        if (window.caches) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+      });
+      await p.goto(BASE + "/", { waitUntil: "load" });
+    }
     await p.waitForTimeout(1200);
+    const bundle = await p.evaluate(() => {
+      const e = performance.getEntriesByType("resource").map((r) => r.name).filter((n) => /assets\/game\.[a-f0-9]+\.js/.test(n));
+      return e[0] || "(inline)";
+    });
+    console.log(`[${tag}] running bundle:`, bundle.split("/").pop());
     await p.locator("#modePickBtn").click();
     await p.waitForTimeout(600);
     return p;
