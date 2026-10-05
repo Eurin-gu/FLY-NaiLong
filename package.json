@@ -11,7 +11,10 @@
     "serve": "node server.mjs",
     "icons": "node scripts/make-icons.mjs",
     "vendor:mediapipe": "node scripts/vendor-mediapipe.mjs",
-    "verify": "node scripts/verify.mjs",
+    "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1",
+    "verify:build-only": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1 -SkipBuild",
+    "verify:http": "node scripts/verify.mjs --http-only",
+    "verify:node": "node scripts/verify.mjs",
     "package": "node scripts/package.mjs",
     "release": "node scripts/build.mjs && node scripts/package.mjs"
   },

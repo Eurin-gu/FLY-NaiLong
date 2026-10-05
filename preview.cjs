@@ -18,6 +18,9 @@ const MIME = {
   ".json": "application/json; charset=utf-8",
   ".webmanifest": "application/manifest+json; charset=utf-8",
   ".png": "image/png",
+  ".ogg": "audio/ogg",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
   ".map": "application/json; charset=utf-8",
@@ -40,8 +43,18 @@ http
     }
     if (pathname.endsWith("/")) pathname += "index.html";
 
-    const file = path.join(ROOT, path.normalize(pathname).replace(/^([/\\])+/, ""));
-    if (!file.startsWith(ROOT) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+    const rel = path.normalize(pathname).replace(/^([/\\])+/, "");
+    // public/ 里的东西（sfx、music、PWA 图标、loader 用的 nailong.png）在构建时
+    // 会被拷进 dist/ 根目录；源码树上它们只存在于 public/ 下。这里做一次回退，
+    // 否则本地开发时 /nailong.png、/sfx/*.ogg 全是 404，加载图和音效都看不到。
+    const candidates = [path.join(ROOT, rel), path.join(ROOT, "public", rel)];
+    const file = candidates.find(
+      (candidate) =>
+        candidate.startsWith(ROOT) &&
+        fs.existsSync(candidate) &&
+        fs.statSync(candidate).isFile(),
+    );
+    if (!file) {
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("Not found");
       return;

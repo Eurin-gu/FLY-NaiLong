@@ -395,6 +395,9 @@ body[data-screen="result"] .toast, body[data-screen="paused"] .toast { display: 
 /* Action-first entry and a calm practice screen. */
 #manualStart { min-height: 44px; padding: 14px 0; text-decoration: underline; text-underline-offset: 4px; }
 body:not([data-screen="intro"]):not([data-screen="calibration"]) #manualStart { display: none; }
+/* 「选玩法」只在首页出现：它换来的是"选玩法"那一屏，结算 / 暂停界面不需要重复入口 */
+#modePickBtn { min-height: 44px; padding: 0 0 14px; text-decoration: underline; text-underline-offset: 4px; }
+body:not([data-screen="intro"]) #modePickBtn { display: none; }
 body[data-screen="intro"] .lobby-challenge, body[data-screen="intro"] .start-tip { display: none; }
 body[data-screen="intro"] .overlay h2 { font-size: clamp(44px, 5.7vw, 78px); line-height: 1.1; }
 body[data-screen="calibration"] .gesture-guide { display: block; width: min(320px, 34%); }

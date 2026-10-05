@@ -382,31 +382,123 @@ class FlightWorld {
       }
       spike.position.set(0,y,-radius*.79-.035);spike.rotation.x=-Math.PI/2;dragon.add(spike);
     }
-    // 一对翅膀。奶龙本体原本没有翅膀，补上之后背对镜头飞行时一眼能看出来。
-    // 做成 根 → 中段 → 翼尖 三层嵌套：上层转动时下层可以滞后一拍再追上，
-    // 扇起来才有"甩"的韧性，而不是一块硬板子在摆。五片羽瓣由内到外变小。
+    // 一对翅膀。以前是五颗椭球排成一串，从背后看像两条毛毛虫，太丑。
+    // 现在按真正的龙翼来做：一条圆润的前缘翼骨 + 一片后掠上翘的翼膜，
+    // 后缘挖出三个扇贝缺口；翼展方向再分成 根 / 腕 / 指 三段，
+    // 扇动时逐段滞后，翼尖有"甩"出去的韧性。
     this.wings = [];
-    const wingSkin = new T.MeshStandardMaterial({ color: '#fff1c2', roughness: .58 });
-    const wingTip = new T.MeshStandardMaterial({ color: '#f6d68a', roughness: .66 });
-    const wingEdge = new T.MeshStandardMaterial({ color: '#ffe9a8', roughness: .62 });
+    const WING_SPAN = 1.62;
+    // 前缘曲线：向外伸的同时上扬、微微后掠
+    const wingLead = (side, t) =>
+      new T.Vector3(
+        side * WING_SPAN * t,
+        .62 * Math.pow(t, .75),
+        -.36 * Math.pow(t, 1.4),
+      );
+    // 翼膜的"弦"朝下（不是朝后）：这样立在背上，正对镜头也能看整片翼膜
+    const CHORD_DIR = new T.Vector3(0, -.95, -.31).normalize();
+    const wingChord = (t) => .30 + .56 * Math.pow(1 - t, .55);
+    // 三个缺口：t = 1/6、1/2、5/6 处往里咬，1/3、2/3 处是"指骨"末端；
+    // 越靠翼尖咬得越浅，末端收成一个圆润的翼尖而不是尖刺
+    const wingScallop = (t) =>
+      1 - .22 * Math.abs(Math.sin(Math.PI * 3 * t)) * (1 - .55 * t * t);
+    const wingPoint = (side, t, c) =>
+      wingLead(side, t)
+        .addScaledVector(CHORD_DIR, c * wingChord(t) * wingScallop(t))
+        .add(new T.Vector3(0, 0, -.12 * Math.sin(Math.PI * c) * (.6 + .4 * t)));
+    const wingColor = [new T.Color("#ffd88f"), new T.Color("#ffedc8")];
+    const wingShade = new T.Color("#eeb463");
+    const wingMembraneGeo = (side, t0, t1, origin) => {
+      const rows = 8, cols = 6, pos = [], col = [], index = [];
+      for (let i = 0; i <= rows; i++) {
+        const t = t0 + (t1 - t0) * (i / rows);
+        for (let j = 0; j <= cols; j++) {
+          const p = wingPoint(side, t, j / cols).sub(origin);
+          pos.push(p.x, p.y, p.z);
+          const tint = wingColor[0]
+            .clone()
+            .lerp(wingColor[1], Math.min(1, .12 + .78 * t + .10 * (j / cols)))
+            // 后缘压一点暖色，翼膜才有厚度，不会是张白纸
+            .lerp(wingShade, .22 * (j / cols));
+          col.push(tint.r, tint.g, tint.b);
+        }
+      }
+      for (let i = 0; i < rows; i++)
+        for (let j = 0; j < cols; j++) {
+          const a = i * (cols + 1) + j, b = a + 1, d = a + cols + 1, e = d + 1;
+          index.push(a, d, b, b, d, e);
+        }
+      const geo = new T.BufferGeometry();
+      geo.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+      geo.setAttribute("color", new T.Float32BufferAttribute(col, 3));
+      geo.setIndex(index);
+      geo.computeVertexNormals();
+      return geo;
+    };
+    const wingBoneGeo = (side, t0, t1, r0, r1, origin) => {
+      const lift = new T.Vector3(0, .035, .045);
+      const curve = new T.CatmullRomCurve3(
+        [0, .25, .5, .75, 1].map((k) =>
+          wingLead(side, t0 + (t1 - t0) * k).add(lift),
+        ),
+      );
+      const rings = 20, radial = 12;
+      const geo = new T.TubeGeometry(curve, rings, 1, radial, false);
+      const p = geo.attributes.position;
+      for (let i = 0; i <= rings; i++) {
+        const t = t0 + (t1 - t0) * (i / rings);
+        const r = T.MathUtils.lerp(r0, r1, T.MathUtils.clamp(t / .95, 0, 1));
+        const center = curve.getPointAt(i / rings);
+        for (let j = 0; j <= radial; j++) {
+          const k = i * (radial + 1) + j;
+          p.setXYZ(
+            k,
+            center.x + (p.getX(k) - center.x) * r,
+            center.y + (p.getY(k) - center.y) * r,
+            center.z + (p.getZ(k) - center.z) * r,
+          );
+        }
+      }
+      geo.computeVertexNormals();
+      geo.translate(-origin.x, -origin.y, -origin.z);
+      return geo;
+    };
+    const wingMembraneMat = new T.MeshStandardMaterial({
+      color: "#ffffff", vertexColors: true, roughness: .66, side: T.DoubleSide,
+    });
+    const wingBoneMat = new T.MeshStandardMaterial({ color: "#ffd792", roughness: .46 });
+    const wingRootMat = new T.MeshStandardMaterial({ color: "#ffe7b4", roughness: .5 });
     for (const side of [-1, 1]) {
-      const wing = new T.Group();
-      wing.position.set(side * .84, .42, -.62);   // 肩后，根部略埋进身体
-      dragon.add(wing);
-      const mid = new T.Group();
-      mid.position.set(side * .85, .06, 0);
-      wing.add(mid);
-      const tip = new T.Group();
-      tip.position.set(side * .85, .08, -.02);
-      mid.add(tip);
-      oval(wing, wingSkin, [side * .42, .02, .04], [.76, .33, .27]);
-      oval(mid, wingSkin, [side * .06, .03, .02], [.56, .30, .24]);
-      oval(mid, wingTip, [side * .62, .14, -.01], [.52, .25, .21]);
-      oval(tip, wingEdge, [side * .18, .12, -.02], [.46, .22, .18]);
-      oval(tip, wingSkin, [side * .74, .24, -.04], [.36, .17, .14]);
-      wing.userData.mid = mid;
-      wing.userData.tip = tip;
-      this.wings.push(wing);
+      // mount 负责固定的站姿（后掠 + 上反角），动画只转它里面的三段
+      // 从肩胛骨长出来：头很大，根部长在 y≈0 以上会被脑袋吞掉，
+      // 所以落点放在背中部（头的最下缘以下），再靠上反角把翼尖抬到肩线以上。
+      const mount = new T.Group();
+      mount.position.set(side * 1.0, -.18, -.66);
+      mount.rotation.set(side * -.05, side * .10, side * .42);
+      dragon.add(mount);
+      const root = new T.Group(), mid = new T.Group(), tip = new T.Group();
+      mount.add(root); root.add(mid); mid.add(tip);
+      const midOrigin = wingLead(side, .42);
+      const tipOrigin = wingLead(side, .74);
+      mid.position.copy(midOrigin);
+      tip.position.copy(tipOrigin.clone().sub(midOrigin));
+      const spans = [[0, .44], [.40, .76], [.72, 1]];
+      const bones = [[.130, .095], [.095, .064], [.064, .034]];
+      const groups = [root, mid, tip];
+      const origins = [new T.Vector3(), midOrigin, tipOrigin];
+      spans.forEach(([t0, t1], i) => {
+        groups[i].add(
+          new T.Mesh(wingMembraneGeo(side, t0, t1, origins[i]), wingMembraneMat),
+          new T.Mesh(
+            wingBoneGeo(side, t0, t1, bones[i][0], bones[i][1], origins[i]),
+            wingBoneMat,
+          ),
+        );
+      });
+      oval(root, wingRootMat, [side * .04, .02, .04], [.26, .22, .22]);
+      root.userData.mid = mid;
+      root.userData.tip = tip;
+      this.wings.push(root);
     }
     return dragon;
   }

@@ -603,6 +603,8 @@
   }
   function start() {
     if (!world || !cameraAvailable) return;
+    clearTimeout(calibrationTimer);
+    $("manualStart").textContent = "不用摄像头，触屏 / 键盘试玩 →";
     overlayStep = "done";
     saveRecord();
     clearInput();
@@ -674,16 +676,41 @@
   document.body.classList.add("preflight");
   let setupControl = "camera";
   let poseReady = false;
+  // 校准阶段的兜底计时器：摄像头通了但一直没识别到扇翅时，用它把玩家放出来。
+  let calibrationTimer = 0;
   const calibration = { step: 0, flaps: 0, since: 0, hold: 0, last: 0 };
   $("manualStart").addEventListener("click", () => {
     launching = false;
+    clearTimeout(calibrationTimer);
     stopCamera();
     setupControl = "manual";
     s.calibrating = false;
     s.flight = "free";
+    $("manualStart").textContent = "不用摄像头，触屏 / 键盘试玩 →";
     $("startBtn").disabled = false;
     start();
   });
+  // 首页的「选玩法」：以前只有结算后的「换个玩法」能进这一屏，
+  // 新玩家第一局被强制自由飞行，选不到 6 km 挑战。
+  $("modePickBtn").addEventListener("click", () => {
+    clearTimeout(calibrationTimer);
+    stopCamera();
+    showModeStep();
+  });
+  // 校准阶段的兜底出口：摄像头慢、光线差或动作识别不出来时，
+  // 不能再让玩家对着一个灰掉的「等待你的动作…」干等。
+  function skipCalibration(message) {
+    clearTimeout(calibrationTimer);
+    launching = false;
+    s.calibrating = false;
+    setupControl = "manual";
+    stopCamera();
+    $("setupCameraView").hidden = true;
+    $("manualStart").textContent = "不用摄像头，触屏 / 键盘试玩 →";
+    showModeStep();
+    if (message) $("overlayDescription").textContent = message;
+    toast("已切到键盘 / 触屏");
+  }
   async function beginCalibration() {
     if (launching) return;
     launching = true;
@@ -699,7 +726,16 @@
     $("startBtn").disabled = true;
     $("startBtn").textContent = "等待你的动作…";
     $("setupCameraView").hidden = false;
+    // 校准这条路上主按钮是灰的，所以旁边这个出口必须写清楚它现在能干什么。
+    $("manualStart").textContent = "跳过校准，先用键盘 / 触屏 →";
     Object.assign(calibration, { step: 0, flaps: 0, since: 0, hold: 0, last: 0 });
+    // 兜底计时从点下按钮就开始算，而不是等摄像头就绪之后：
+    // 摄像头 + 模型加载本身可能就十几秒，玩家不该在"等待你的动作…"里干等半分钟。
+    clearTimeout(calibrationTimer);
+    calibrationTimer = setTimeout(() => {
+      if (overlayStep !== "calibration" || calibration.flaps > 0) return;
+      skipCalibration("摄像头或动作识别没准备好，已切到键盘 / 触屏。选个玩法就能起飞。");
+    }, 25000);
     // 超时兜底：摄像头流程里有素材下载，挂死了 launching 就永远卡住，
     // 两个按钮（再喷一趟 / 换个玩法）会一起失效。
     const ready = await withTimeout(enableCamera(), 120000, "开启摄像头").catch(
@@ -712,7 +748,9 @@
       $("overlayDescription").textContent = "摄像头未能连接。可以直接使用触屏或键盘试玩。";
       $("startBtn").disabled = false;
       $("startBtn").textContent = "重新开启摄像头";
+      $("manualStart").textContent = "不用摄像头，触屏 / 键盘试玩 →";
       overlayStep = "intro";
+      return;
     }
   }
   function updateCalibration(now, framed) {
@@ -755,6 +793,8 @@
   function showModeStep() {
     $("changeModeBtn").hidden = true;
     $("resultGoal").hidden = true;
+    clearTimeout(calibrationTimer);
+    $("manualStart").textContent = "不用摄像头，触屏 / 键盘试玩 →";
     s.menuPreview = true;
     s.calibrating = false;
     // 从结算界面进来时，场景还停在刚才那一局的高度上（相机在 1000m 高空、
@@ -1425,6 +1465,8 @@
   });
   $("setupBack").addEventListener("click", () => {
     stopCamera();
+    clearTimeout(calibrationTimer);
+    $("manualStart").textContent = "不用摄像头，触屏 / 键盘试玩 →";
     overlayStep = "intro";
     s.mode = "ready";
     s.menuPreview = false;
@@ -1465,19 +1507,18 @@
     $("changeModeBtn").disabled = false;
     try {
       if (setupControl === "camera" && !s.camera) {
+        // 以前这里是 await enableCamera()（上限 120 秒）+ 按钮禁用：
+        // 只要摄像头的权限弹窗被挂起（手机上很常见），「再喷一趟」就一直是灰的，
+        // 「正在开启摄像头…」这几个字可以挂两分钟，玩家只会觉得按钮坏了。
+        // 现在立刻开局，摄像头在后台继续连；连上就自动切成体感，连不上也不影响飞。
         $("startBtn").textContent = "正在开启摄像头…";
-        // 再兜一层上限，保证 finally 一定执行、按钮一定恢复
-        const ready = await withTimeout(enableCamera(), 120000, "开启摄像头").catch(
-          () => false,
-        );
-        if (!ready) {
-          setupControl = "manual";
-          if (overlayStep === "done") showModeStep();
-          syncSetupControl();
-          $("setupControlHint").textContent =
-            "摄像头未就绪。已切到键盘 / 触屏，确认后再开始飞行。";
-          return;
-        }
+        start();
+        enableCamera()
+          .then((ok) => {
+            if (!ok) toast("摄像头没连上，先用键盘 / 触屏飞");
+          })
+          .catch(() => toast("摄像头没连上，先用键盘 / 触屏飞"));
+        return;
       }
       start();
     } finally {
@@ -1490,6 +1531,19 @@
   $("rollBtn").addEventListener("click", barrelRoll);
   $("tutorialSkip").addEventListener("click", endTutorial);
   $("pauseBtn").addEventListener("click", pause);
+  // 舞台右上角的 ↻：之前它没有任何事件绑定，玩家点了完全没反应。
+  // 现在立刻重开这一局：不等摄像头、也不受 launching 卡死的影响。
+  $("restartBtn").addEventListener("click", () => {
+    launching = false;
+    if (!world || !cameraAvailable) return;
+    if (!s.flight || (s.mode !== "running" && s.mode !== "paused" && s.mode !== "ended")) {
+      toast("先选个玩法");
+      showModeStep();
+      return;
+    }
+    start();
+    toast("重新开始");
+  });
   skillButtons.forEach((b, i) =>
     b.addEventListener("click", () => useSkill(i)),
   );
@@ -2338,7 +2392,16 @@
   };
   window.addEventListener("pointerdown", kickSfxLoad);
   window.addEventListener("keydown", kickSfxLoad);
-  $("cameraBtn").addEventListener("click", enableCamera);
+  // 侧栏「开启体感」：素材下载或权限弹窗一挂，按钮就永远是灰的（没有任何兜底）。
+  // 这里给一个上限，超时就恢复按钮并说明可以先用键盘 / 触屏。
+  $("cameraBtn").addEventListener("click", async () => {
+    if (s.camera) return;
+    const ok = await withTimeout(enableCamera(), 90000, "开启摄像头").catch(() => false);
+    if (!ok) {
+      stopCamera();
+      toast("摄像头没连上，先用键盘 / 触屏玩");
+    }
+  });
   $("keyboardBtn").addEventListener("click", stopCamera);
   window.addEventListener("pagehide", stopCamera);
   // 切到后台时音乐也跟着停，别在后台一直响

@@ -195,7 +195,10 @@ async function checkBrowser() {
   await page.screenshot({ path: path.join(SHOTS, "desktop-ready.png") });
   await page.locator("#dragonHello").click();
   record("dragon responds to greeting", (await page.locator("#dragonSpeech").textContent()).includes("动力"));
-  await page.locator("#startBtn").click();
+  // 体感引导的三个页签只在「选玩法」那一屏展开（校准过程中页签是收起的，
+  // 见 experience.css 的 body[data-screen="calibration"] 规则），
+  // 所以从首页的「选玩法」进这一屏，而不是直接按「开启摄像头」。
+  await page.locator("#modePickBtn").click();
   record("gesture guide is visible before flight", await page.locator("#gestureGuide").isVisible());
   await page.locator('[data-guide="steer"]').click();
   record("gesture guide explains steering", (await page.locator("#guideExplain").textContent()).includes("倾斜"));
@@ -231,6 +234,14 @@ async function checkBrowser() {
     await start.click();
   };
   await beginGame();
+  // 首飞的四步练习会锁住技能面板和喷射切换（experience.css 里 body.learning
+  // 那组规则），喷射切换的检查必须等练习结束之后再做。
+  // 顺便验证"跳过教程"这个按钮真的能把练习收掉。
+  if (await page.locator("#tutorial").isVisible()) {
+    await page.locator("#tutorialSkip").click();
+    await page.waitForTimeout(300);
+    record("first-flight tutorial can be skipped", !(await page.locator("#tutorial").isVisible()));
+  }
   const readAltitude = () =>
     page.evaluate(() => Number((document.getElementById("altitudeText").textContent || "").replace(/[^0-9.-]/g, "")));
   const readVerticalSpeed = () =>
@@ -391,6 +402,21 @@ async function checkBrowser() {
   // 7. Rooftops call the officer too, not just the ground. Sliding along the
   // deck should trip the rooftop rule before the 3 s loiter rule fires, and the
   // call-out identifies which trap caught us. Retry if the ground won the race.
+  //
+  // 只读"当前"toast 会和别的提示抢同一帧（擦边飞过、加分之类），
+  // 所以整段过程里所有出现过的 toast 都记下来，再看有没有"撞上楼体"那条。
+  await page.evaluate(() => {
+    window.__toastLog = [];
+    const el = document.getElementById("toast");
+    if (!el) return;
+    new MutationObserver(() => {
+      const text = (el.textContent || "").trim();
+      if (text && window.__toastLog[window.__toastLog.length - 1] !== text)
+        window.__toastLog.push(text);
+    }).observe(el, { childList: true, characterData: true, subtree: true });
+  });
+  const readToastLog = () =>
+    page.evaluate(() => (window.__toastLog || []).slice(-6));
   let rooftopCall = false;
   let observedCall = "";
   for (let attempt = 0; attempt < 3 && !rooftopCall; attempt += 1) {
@@ -400,8 +426,10 @@ async function checkBrowser() {
     const deadline = Date.now() + 4000;
     while (Date.now() < deadline && !rooftopCall) {
       if (await chaseIsReal()) {
-        observedCall = ((await page.locator("#toast").textContent()) || "").trim();
-        if (observedCall.includes("楼")) rooftopCall = true;
+        await page.waitForTimeout(400); // 让同一帧里的提示先落地
+        const toasts = await readToastLog();
+        observedCall = toasts.join(" / ");
+        if (toasts.some((text) => text.includes("楼"))) rooftopCall = true;
         break;
       }
       await page.waitForTimeout(150);
