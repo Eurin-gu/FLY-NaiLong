@@ -306,16 +306,23 @@ async function checkBrowser() {
   );
 
   // 2. No terminal velocity — the previous build plateaued at 125 m/s.
-  let fastestFall = v2;
+  //    先爬高再松手：落差固定，峰值速度就远超任何钳制，阈值也能从 -150 提到 -200。
+  //    以前直接从"前面几段飞行剩下的高度"往下掉，峰值总在 -150 上下飘，
+  //    两次跑一次过、一次不过。
+  await page.keyboard.down("Space");
+  const highEnough = await waitFor(async () => (await readAltitude()) > 600, 25000, 150);
+  await page.keyboard.up("Space");
+  record("climbs high enough for the free-fall test", highEnough, `altitude ${await readAltitude()} m`);
+  let fastestFall = await readVerticalSpeed();
   const landed = await waitFor(async () => {
     fastestFall = Math.min(fastestFall, await readVerticalSpeed());
     return (await readAltitude()) <= 4.5;
-  }, 25000, 120);
+  }, 40000, 120);
   record("falls all the way back to the deck", landed, `altitude ${await readAltitude()} m`);
   record(
     "free fall is not clamped to a terminal velocity",
-    fastestFall < -150,
-    `peak ${fastestFall} m/s`,
+    fastestFall < -200,
+    `peak ${fastestFall} m/s (旧版钳在 125 m/s)`,
   );
 
   // A visible #chase is NOT proof of a pursuit: the very same element doubles

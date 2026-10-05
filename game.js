@@ -1578,8 +1578,10 @@
     setupControl = "camera";
     syncSetupControl();
     $("setupCamera").disabled = true;
+    // 加载期间整页仍然可点（加载布是 pointer-events:none），玩家随时能改选键盘 / 触屏、
+    // 点加载卡上的「取消」，或直接按「开始飞行」，所以这里不必等满两分钟。
     // 同上：素材下载可能挂死，这里必须有上限，否则这个开关也永远转回不来
-    const ready = await withTimeout(enableCamera(), 120000, "开启摄像头").catch(
+    const ready = await withTimeout(enableCamera(), 60000, "开启摄像头").catch(
       () => false,
     );
     $("setupCamera").disabled = false;
@@ -2164,6 +2166,20 @@
   function poseLoaderNote(text) {
     if (text) $("poseLoaderText").textContent = text;
   }
+  // 加载卡上的「取消」：作废在途的摄像头加载，退回键盘 / 触屏。
+  // 素材（约 24 MB）下载慢或权限弹窗挂着时，玩家不该只能干看进度条。
+  function cancelCameraLoad(message) {
+    stopCamera();
+    setupControl = "manual";
+    $("setupCamera").disabled = false;
+    syncSetupControl();
+    $("setupControlHint").textContent =
+      "已取消摄像头。键盘 / 触屏随时能玩，想用体感再点「摄像头体感」。";
+    if (message) toast(message);
+  }
+  $("poseLoaderCancel").addEventListener("click", () =>
+    cancelCameraLoad("已取消，先用键盘 / 触屏"),
+  );
   function poseLoaderHide() {
     poseLoader.running = false;
     cancelAnimationFrame(poseLoader.raf);
